@@ -167,7 +167,7 @@ class DART():
             border_pixels = self._border_detect(segmentation)
 
             # Free pixels whatever the fuck that means
-            free_pixels = self._free_pixels()
+            free_pixels = self._free_pixels() | border_pixels
 
             # Fixed pixels
             fixed_pixels = free_pixels == 0
