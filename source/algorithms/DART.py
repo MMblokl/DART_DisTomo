@@ -88,7 +88,7 @@ class DART():
 
     def gray_thresholds(
             self,
-            gray_levels: list | tuple,
+            gray_intensities: list | tuple,
         ) -> list:
         """Define threshold array based on input gray_values.
         Uses formula:
@@ -96,7 +96,7 @@ class DART():
         Where Tau is the threshold for gray value rho on position i in the array.
         
         Args:
-            gray_levels (list | tuple or array_like): List of known gray levels in the image from low to high.
+            gray_intensities (list | tuple or array_like): List of known gray levels in the image from low to high.
         
         Returns:
             List of gray value thresholds according to the formula.
@@ -104,8 +104,8 @@ class DART():
         # 
         # Pad with 0 and 255 at start and end
         thresholds = [0] + [
-            (gray_levels[i] + gray_levels[i+1]) / 2
-            for i in range(len(gray_levels) - 1)
+            (gray_intensities[i] + gray_intensities[i+1]) / 2
+            for i in range(len(gray_intensities) - 1)
         ] + [255]
 
         return thresholds
@@ -115,18 +115,18 @@ class DART():
             self,
             inp: np.ndarray,
             thresholds: list | tuple,
-            gray_levels: list | tuple,
+            gray_intensities: list | tuple,
         ):
         """ Creates a simple segmentation according to the thresholds given in thresholds.
 
         Args:
             inp (np.ndarray): Input image.
             threshold (list | tuple): Array of thresholds for each gray level value.
-            gray_levels (list | tuple):  Array of prior gray levels defined by the user for each threshold.
+            gray_intensities (list | tuple):  Array of prior gray levels defined by the user for each threshold.
         
         Returns:
             Segmented image where each pixel from in the input image is thresholded for
-            each threshold i in thresholds, and replaced by gray_levels[i]if it is in
+            each threshold i in thresholds, and replaced by gray_intensities[i]if it is in
             between the current and next threshold.
         """
         output_img = np.zeros(inp.shape, dtype=np.uint8)
@@ -136,7 +136,7 @@ class DART():
             segmentation = (inp >= threshold) * (inp <= thresholds[i + 1])
             
             # Fill segmented areas into ouput with gray values for that specific threshold
-            output_img[segmentation] = gray_levels[i]
+            output_img[segmentation] = gray_intensities[i]
         
         return output_img
 
@@ -204,12 +204,12 @@ class DART():
         return reconstruction
     
 
-    def run(self, p: int, gray_levels: list, iterations: int):
+    def run(self, p: int, gray_intensities: list, iterations: int):
         """Run the DART algorithm according to the initializated values.
         
         Args:
             p (integer): Probability of sampling a pixel as a fixed pixel.
-            gray_levels (list | tuple): List of prior gray intensity levels.
+            gray_intensities (list | tuple): List of prior gray intensity levels.
             iterations (integer): Number of DART iterations.
         
         Returns:
@@ -218,7 +218,7 @@ class DART():
         
         self.p = p
         # Define thresholds for pre-defined gray values
-        thresholds = self.gray_thresholds(gray_levels)
+        thresholds = self.gray_thresholds(gray_intensities)
 
         # Initial reconstruction using sirt
         reconstruction = self.reconstruct()
@@ -227,7 +227,7 @@ class DART():
         for i in range(iterations):
 
             # Segmentation of current reconstruction
-            segmentation = self._segment(inp=reconstruction, thresholds=thresholds, gray_levels=gray_levels)
+            segmentation = self._segment(inp=reconstruction, thresholds=thresholds, gray_intensities=gray_intensities)
 
             # Determine border pixels
             border_pixels = self._border_detect(segmentation)
