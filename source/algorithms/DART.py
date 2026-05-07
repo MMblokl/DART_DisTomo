@@ -8,15 +8,12 @@ from copy import copy
 class DART():
     def __init__(
             self,
-            p,
             proj_geom,
             sinogram,
             img_shape,
-            projector_id,
-            iterations,
+            sirt_iterations,
         ):
-        self.p = p
-        self.iterations = iterations
+        self.sirt_iterations = sirt_iterations
         self.img_shape = img_shape
 
         
@@ -27,7 +24,7 @@ class DART():
         # Create volume geometry.
         self.proj_geom = proj_geom
         self.vol_geom = astra.create_vol_geom(img_shape)
-        self.projector_id = projector_id
+        self.projector_id = astra.create_projector('cuda', proj_geom, self.vol_geom)
 
 
     def _border_detect(self, inp: np.ndarray):
@@ -102,6 +99,8 @@ class DART():
             free_pixels=None,
             alg_name="SIRT_CUDA"
         ):
+        # Create the SIRT config
+
         config = astra.astra_dict(alg_name)
         
         # None if this is the first initial reconstruction
@@ -126,15 +125,15 @@ class DART():
             free_pixels_id = astra.data2d.create("-vol", self.vol_geom, data=free_pixels)
             config["option"] = {"ReconstructionMaskId": free_pixels_id}
         else:
-            reconstruction_id = astra.data2d.create("-vol", self.vol_geom, data=float(0))
-            config["ProjectionDataId"] = self.sino_id            
+            reconstruction_id = astra.data2d.create("-vol", self.vol_geom, data=0.0)
+            config["ProjectionDataId"] = self.sino_id
 
         config["ReconstructionDataId"] = reconstruction_id
         config["option"].update({'MinConstraint': 0.0, 'MaxConstraint': 255.0})
         
         # Run the algorithm
         alg_id = astra.algorithm.create(config=config)
-        astra.algorithm.run(alg_id, iterations=self.iterations)
+        astra.algorithm.run(alg_id, iterations=self.sirt_iterations)
 
         # Retrieve reconstruction
         reconstruction = astra.data2d.get(reconstruction_id)
@@ -188,8 +187,10 @@ class DART():
 
 
 if __name__ == "__main__":
+    for family in phantoms:
+        for image in family:
+            proj_geom, sino = make_sino(image)
+            dart = DART(proj_geom=proj_geom, sinogram=sino, img_shape=image.shape, sirt_iterations=10)
+            DART(p=0.5, gray_levels=[100, 170, 210], iterations=5)
+
     dart = DART()
-    image = [[0,0,0], [0,1,0], [0,0,0]]
-    image = np.asarray(image)
-    image = np.pad(image, 1, mode="edge")
-    dart._border_detect(inp=image)
