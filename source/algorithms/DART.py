@@ -1,9 +1,10 @@
 import astra
 import numpy as np
-import PIL
+from PIL import Image
 from scipy.ndimage import gaussian_filter
 from copy import copy
-
+from sinograms.create_sinogram import create_sinogram
+from sinograms.sinograms import saveimg
 
 class DART():
     def __init__(
@@ -16,15 +17,14 @@ class DART():
         self.sirt_iterations = sirt_iterations
         self.img_shape = img_shape
 
-        
-        # Save sinogram into a data2d object
-        self.sinogram = sinogram
-        self.sino_id = astra.data2d.create('-vol', self.vol_geom, sinogram)
-
         # Create volume geometry.
         self.proj_geom = proj_geom
         self.vol_geom = astra.create_vol_geom(img_shape)
         self.projector_id = astra.create_projector('cuda', proj_geom, self.vol_geom)
+
+        # Save sinogram into a data2d object
+        self.sinogram = sinogram
+        self.sino_id = astra.data2d.create('-sino', self.proj_geom, data=sinogram)
 
 
     def _border_detect(self, inp: np.ndarray):
@@ -61,10 +61,12 @@ class DART():
         return output
 
 
-    def _free_pixels(self, inp):
+    def _free_pixels(self):
         # We sample a random number of free pixels according to self.p
         # p - (1 - p) chance to be or not to be included from boundary pixels
-        output = np.random.choice([0,1], inp.shape, p=[self.p, 1-self.p])
+        output = np.random.choice([0,1], self.img_shape, p=[self.p, 1-self.p])
+
+        return output
 
 
     def gray_thresholds(self, gray_levels):
@@ -74,14 +76,13 @@ class DART():
         # Pad with 0 and 255 at start and end
         thresholds = [0] + [
             (gray_levels[i] + gray_levels[i+1]) / 2
-            for i in range(gray_levels)
+            for i in range(len(gray_levels) - 1)
         ] + [255]
-
         return thresholds
 
 
     def _segment(self, inp, thresholds, gray_levels):
-        output_img = np.full(inp.shape, dtype=np.uint8)
+        output_img = np.zeros(inp.shape, dtype=np.uint8)
 
         for i, threshold in enumerate(thresholds[:-1]):
             # At each pixel of the input, get indexes that are both above current threshold and are not above the next threshold
@@ -102,9 +103,10 @@ class DART():
         # Create the SIRT config
 
         config = astra.astra_dict(alg_name)
+        config["option"] = {}
         
         # None if this is the first initial reconstruction
-        if free_pixels:
+        if free_pixels is not None:
             # Create free_pixels dataid
             free_pix_idx = np.where(free_pixels != 0)
             rec = copy(reconstruction)
@@ -143,11 +145,9 @@ class DART():
         return reconstruction
     
 
-    def __call__(self, *args, **kwds):
-        if args["p"]:
-            self.p = args["p"]
-        
-        gray_levels = args["gray_levels"]
+    def run(self, p: int, gray_levels: list, iterations: int):
+        if p:
+            self.p = p
 
         # Define thresholds for pre-defined gray values
         thresholds = self.gray_thresholds(gray_levels)
@@ -158,7 +158,7 @@ class DART():
         )
 
         # Iteration loop
-        for i in range(args["iterations"]):
+        for i in range(iterations):
 
             # Segmentation of current reconstruction
             segmentation = self._segment(inp=reconstruction, thresholds=thresholds, gray_levels=gray_levels)
@@ -167,12 +167,12 @@ class DART():
             border_pixels = self._border_detect(segmentation)
 
             # Free pixels whatever the fuck that means
-            free_pixels = self._free_pixels(border_pixels)
+            free_pixels = self._free_pixels()
 
             # Fixed pixels
-            fixed_pixels = np.where(free_pixels == 0)
+            fixed_pixels = free_pixels == 0
             # Replace fixed pixels with those from the segmentation; we keep them fixed.
-            reconstruction[fixed_pixels[0], fixed_pixels[1]] = segmentation[fixed_pixels[0], fixed_pixels[1]]
+            reconstruction[fixed_pixels] = segmentation[fixed_pixels]
             
             # SIRT RECONSTRUCTION USING FREE PIXELS as a mask
             reconstruction = self.reconstruct(
@@ -181,16 +181,18 @@ class DART():
             )
 
             # Smoothing
-            if i != args["iterations"]:
+            if i != iterations:
                 smoothed_recon = self._smoothing(reconstruction)
                 reconstruction[free_pixels[0], free_pixels[1]] = smoothed_recon[free_pixels[0], free_pixels[1]]
+        return reconstruction
 
 
 if __name__ == "__main__":
-    for family in phantoms:
-        for image in family:
-            proj_geom, sino = make_sino(image)
-            dart = DART(proj_geom=proj_geom, sinogram=sino, img_shape=image.shape, sirt_iterations=10)
-            DART(p=0.5, gray_levels=[100, 170, 210], iterations=5)
+    img = Image.open("./blobs/blob_0.png")
+    img = np.asarray(img)
+    
+    proj_geom, sino = create_sinogram(img, 512, 32)
 
-    dart = DART()
+    dart = DART(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, sirt_iterations=25)
+    reconstructed_image = dart.run(0.4, [0,120,255], 100)
+    saveimg(reconstructed_image, "./yuh.png")
