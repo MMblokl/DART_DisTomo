@@ -27,7 +27,7 @@ class DART():
         self.sino_id = astra.data2d.create('-sino', self.proj_geom, data=sinogram)
 
 
-    def _border_detect(self, inp: np.ndarray):
+    def border_detect(self, inp: np.ndarray):
         """Border pixel returns, basically just an edge detection
         
         Args:
@@ -55,7 +55,7 @@ class DART():
         return edges
 
 
-    def _smoothing(self, inp: np.ndarray):
+    def smoothing(self, inp: np.ndarray):
         """Smoothing function for after a single reconstruction
         
         Args:
@@ -70,7 +70,7 @@ class DART():
         return output
 
 
-    def _free_pixels(self):
+    def free_pixels(self):
         """Samples random locations based on image shape where free_pixels will be located.
         
         Args:
@@ -111,7 +111,7 @@ class DART():
         return thresholds
 
 
-    def _segment(
+    def segment(
             self,
             inp: np.ndarray,
             thresholds: list | tuple,
@@ -227,13 +227,13 @@ class DART():
         for i in range(iterations):
 
             # Segmentation of current reconstruction
-            segmentation = self._segment(inp=reconstruction, thresholds=thresholds, gray_intensities=gray_intensities)
+            segmentation = self.segment(inp=reconstruction, thresholds=thresholds, gray_intensities=gray_intensities)
 
             # Determine border pixels
-            border_pixels = self._border_detect(segmentation)
+            border_pixels = self.border_detect(segmentation)
 
             # Free pixels whatever the fuck that means
-            free_pixels = self._free_pixels() | border_pixels
+            free_pixels = self.free_pixels() | border_pixels
 
             # Fixed pixels
             fixed_pixels = free_pixels == 0
@@ -248,7 +248,7 @@ class DART():
 
             # Smoothing
             if i != iterations:
-                smoothed_recon = self._smoothing(reconstruction)
+                smoothed_recon = self.smoothing(reconstruction)
                 reconstruction[free_pixels[0], free_pixels[1]] = smoothed_recon[free_pixels[0], free_pixels[1]]
         
         return reconstruction
