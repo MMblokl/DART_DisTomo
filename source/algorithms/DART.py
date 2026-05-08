@@ -3,8 +3,8 @@ import numpy as np
 from PIL import Image
 from scipy.ndimage import gaussian_filter
 from copy import copy
-from source.sinograms.create_sinogram import create_sinogram
-from source.sinograms.sinograms import saveimg
+from sinograms.create_sinogram import create_sinogram
+from sinograms.sinograms import saveimg
 
 class DART():
     def __init__(

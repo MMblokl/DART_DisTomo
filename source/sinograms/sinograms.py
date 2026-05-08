@@ -8,15 +8,6 @@ from os.path import isdir
 seed = 167
 np.random.seed(seed)
 
-# Create dir for phantoms
-if not isdir("./sinograms/"):
-    mkdir("./sinograms/")
-# Create dir for phantoms
-if not isdir("./fbp/"):
-    mkdir("./fbp/")
-if not isdir("./sirt/"):
-    mkdir("./sirt/")
-
 
 def saveimg(array, name):
     """Saves ndarray as PIL image png.
