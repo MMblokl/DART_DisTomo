@@ -2,7 +2,7 @@ import random
 from skimage import draw, morphology
 import numpy as np
 from PIL import Image
-from os import mkdir
+from os import makedirs
 from os.path import isdir
 from scipy.spatial import Voronoi, voronoi_plot_2d
 from skimage import draw, morphology
@@ -40,7 +40,7 @@ def gen_blob(seed, quant, source_dir, resolution, shape_var, margin, background_
   random.seed(seed)
   np.random.seed(seed)
   if not isdir(source_dir):
-    mkdir(source_dir)
+    makedirs(source_dir)
   for q in range(quant):
     # Create empty image
     img = np.zeros([resolution, resolution])
@@ -105,7 +105,7 @@ def gen_mesh(seed, quant, source_dir, resolution, n_points, margin):
   random.seed(seed)
   np.random.seed(seed)
   if not isdir(source_dir):
-    mkdir(source_dir)
+    makedirs(source_dir)
   for q in range(quant):
     img = np.zeros([resolution, resolution])
 
@@ -156,7 +156,7 @@ def gen_bone(seed, quant, source_dir, resolution, margin, shape_var, n_outer, n_
   np.random.seed(seed)
 
   if not isdir(source_dir):
-    mkdir(source_dir)
+    makedirs(source_dir)
   for q in range(quant):
     # Definine image.
     img = np.zeros((resolution, resolution), dtype=np.float32)
