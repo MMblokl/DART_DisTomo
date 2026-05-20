@@ -2,20 +2,36 @@ import astra
 import numpy as np
 from PIL import Image
 from scipy.ndimage import gaussian_filter
+from scipy.sparse.linalg import lsqr, LinearOperator
 from copy import copy
 from source.sinograms.create_sinogram import create_sinogram
 from source.sinograms.sinograms import saveimg
 
-class DART():
+
+def rescale(array):
+    """Saves ndarray as PIL image png.
+
+    Args:
+        Array (np.ndarray): Input image
+    """
+    array[array < 0] = 0 # Remove any under zero values
+    array = array/array.max() # Rescale to 0-1
+    array = np.clip(array*255, 0, 255).astype(np.uint8) # Clip to 0,255 range
+    
+    return array
+
+class SDART():
     def __init__(
             self,
             proj_geom,
             sinogram,
             img_shape,
             sirt_iterations,
+            lambda_hp,
         ):
         self.sirt_iterations = sirt_iterations
         self.img_shape = img_shape
+        self.lambda_hp = lambda_hp
 
         # Create volume geometry.
         self.proj_geom = proj_geom
@@ -27,32 +43,31 @@ class DART():
         self.sino_id = astra.data2d.create('-sino', self.proj_geom, data=sinogram)
 
 
-    def border_detect(self, inp: np.ndarray):
-        """Border pixel returns, basically just an edge detection
+    def calculate_B(self, inp: np.ndarray):
+        """Calculation of matrix B which contains all neighbour difference values.
         
         Args:
             inp (np.ndarray): Input image as ndarray.
 
         Returns:
-            Boolean/binary image with True on edges/borders.
+            int8 matrix for each pixel position
         """        
         # Simple image padding to prevent index errors
         pad = np.pad(inp, 1, mode="edge")
 
         # This is basically just a semi-vectorized method of checking each pixel.
-        # This checks if any of the neighbours of one pixel is different, that pixel is an edge.
-        edges = (
-            (inp != pad[:-2, :-2]) | # Top left
-            (inp != pad[:-2, 1:-1]) | # Top pixel
-            (inp != pad[:-2, 2:]) | # Top right
-            (inp != pad[1:-1, :-2]) | # Left pixel
-            (inp != pad[1:-1, 2:]) | # Right pixel
-            (inp != pad[2:, :-2]) | # Bottom left
-            (inp != pad[2:, 1:-1]) | # Bottom pixel
-            (inp != pad[2:, 2:]) # Bottom right
+        # This checks counts all non-equal border pixels and generates a matrix for each position.
+        count = (
+            (inp != pad[:-2, :-2]).astype(np.uint8) +   # Top left
+            (inp != pad[:-2, 1:-1]).astype(np.uint8) + # Top
+            (inp != pad[:-2, 2:]).astype(np.uint8) +   # Top right
+            (inp != pad[1:-1, :-2]).astype(np.uint8) + # Left
+            (inp != pad[1:-1, 2:]).astype(np.uint8) +  # Right
+            (inp != pad[2:, :-2]).astype(np.uint8) +   # Bottom left
+            (inp != pad[2:, 1:-1]).astype(np.uint8) +  # Bottom
+            (inp != pad[2:, 2:]).astype(np.uint8)      # Bottom right
         )
-
-        return edges
+        return count
 
 
     def smoothing(self, inp: np.ndarray):
@@ -85,6 +100,52 @@ class DART():
 
         return output
 
+    def lsqr_recon(self, B, W, v):
+        d = 100 / (3 ** B.ravel())
+        m, n = W.shape
+
+        # This is the A*x part
+        def matvec(x):
+            return np.concatenate(
+                [
+                    W @ x,
+                    self.lambda_hp * (d * x)
+                ]
+            )
+        
+        # The A'*b part
+        def rmatvec(b):
+            b1 = b[:m]
+            b2 = b[m:]
+
+            return (
+                W.T @ b1 +
+                self.lambda_hp * (d * b2)
+            )
+
+        # Construct A
+        A = LinearOperator(
+            shape=(m + n, n),
+            matvec=matvec,
+            rmatvec=rmatvec,
+            dtype=np.float32,
+        )
+
+        # B component
+        right = np.concatenate(
+            [
+                self.sinogram.flatten(),
+                self.lambda_hp * ( d * v.flatten() )
+            ]
+        )
+
+        reconstruction = lsqr(A, right, iter_lim=self.sirt_iterations)[0]
+        reconstruction = reconstruction.reshape(512,512)
+        # Rescale to 255
+        reconstruction = rescale(reconstruction)
+
+        return reconstruction
+
 
     def gray_thresholds(
             self,
@@ -116,7 +177,7 @@ class DART():
             inp: np.ndarray,
             thresholds: list | tuple,
             gray_intensities: list | tuple,
-        ):
+        ) -> np.ndarray:
         """ Creates a simple segmentation according to the thresholds given in thresholds.
 
         Args:
@@ -223,46 +284,35 @@ class DART():
         # Initial reconstruction using sirt
         reconstruction = self.reconstruct()
 
-        # Segmentation of current reconstruction
+        # Initial segmentation
         segmentation = self.segment(inp=reconstruction, thresholds=thresholds, gray_intensities=gray_intensities)
 
         # Iteration loop
         for i in range(iterations):
-
-            # Determine border pixels
-            border_pixels = self.border_detect(segmentation)
-
-            # Free pixels whatever the fuck that means
-            free_pixels = self.free_pixels() | border_pixels
-
-            # Fixed pixels
-            fixed_pixels = free_pixels == 0
-            # Replace fixed pixels with those from the segmentation; we keep them fixed.
-            reconstruction[fixed_pixels] = segmentation[fixed_pixels]
-            
-            # SIRT RECONSTRUCTION USING FREE PIXELS as a mask
-            reconstruction = self.reconstruct(
-                reconstruction=reconstruction,
-                free_pixels=free_pixels,
-            )
-
             # Segmentation of current reconstruction
+            v = segmentation
+
+            # Determine Penalty for each pixel
+            B = self.calculate_B(segmentation)
+            #D = self.calculate_D(B)
+
+            # Calculate the W matrix
+            W = astra.optomo.OpTomo(self.projector_id)
+
+            reconstruction = self.lsqr_recon(B, W, v)
+
+            # Segment again
             segmentation = self.segment(inp=reconstruction, thresholds=thresholds, gray_intensities=gray_intensities)
 
-            # Smoothing
-            if i != iterations:
-                smoothed_recon = self.smoothing(reconstruction)
-                reconstruction[free_pixels[0], free_pixels[1]] = smoothed_recon[free_pixels[0], free_pixels[1]]
-        
         return segmentation
 
 
 if __name__ == "__main__":
-    img = Image.open("./blobs/blob_0.png")
+    img = Image.open("./phantoms/blobs/blob_0.png")
     img = np.asarray(img)
     
     proj_geom, sino = create_sinogram(img, 512, 32)
 
-    dart = DART(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, sirt_iterations=25)
-    reconstructed_image = dart.run(0.4, [0,120,255], 100)
+    sdart = SDART(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, sirt_iterations=25, lambda_hp=0.24)
+    reconstructed_image = sdart.run(0.4, [0,120,255], 100)
     saveimg(reconstructed_image, "./yuh.png")
