@@ -1,7 +1,5 @@
-from PIL import Image
 import astra
 import numpy as np
-import glob
 
 def create_sinogram(img, n_detectors, n_projections):
     # Put image into 2d data object
