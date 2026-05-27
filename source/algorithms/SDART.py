@@ -5,20 +5,7 @@ from scipy.ndimage import gaussian_filter
 from scipy.sparse.linalg import lsqr, LinearOperator
 from copy import copy
 from source.sinograms.create_sinogram import create_sinogram
-from source.sinograms.sinograms import saveimg
-
-
-def rescale(array):
-    """Saves ndarray as PIL image png.
-
-    Args:
-        Array (np.ndarray): Input image
-    """
-    array[array < 0] = 0 # Remove any under zero values
-    array = array/array.max() # Rescale to 0-1
-    array = np.clip(array*255, 0, 255).astype(np.uint8) # Clip to 0,255 range
-    
-    return array
+from source.utils import rescale, saveimg
 
 class SDART():
     def __init__(
@@ -101,6 +88,16 @@ class SDART():
         return output
 
     def lsqr_recon(self, B, W, v):
+        """Reconstruction using B, W and v with a least squares problem solver.
+        
+        Args:
+            B (np.ndarray): Matrix of neighbour values from calc_b.
+            W: W matrix from astra.opTomo() calculated from the projector space.
+            v (np.ndarray): Segmented image to be used in calculating output
+        
+        Returns:
+            reconstructed image based on inputs.
+        """
         d = 100 / (3 ** B.ravel())
         m, n = W.shape
 
@@ -139,8 +136,10 @@ class SDART():
             ]
         )
 
+        # Use lsqr with the same number of iterations as SIRT for DART.
         reconstruction = lsqr(A, right, iter_lim=self.sirt_iterations)[0]
         reconstruction = reconstruction.reshape(512,512)
+        
         # Rescale to 255
         reconstruction = rescale(reconstruction)
 
