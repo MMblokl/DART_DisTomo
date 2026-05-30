@@ -12,9 +12,9 @@ class DART():
             proj_geom,
             sinogram,
             img_shape,
-            sirt_iterations,
+            reconstruction_iterations,
         ):
-        self.sirt_iterations = sirt_iterations
+        self.reconstruction_iterations = reconstruction_iterations
         self.img_shape = img_shape
 
         # Create volume geometry.
@@ -195,12 +195,18 @@ class DART():
         
         # Run the algorithm
         alg_id = astra.algorithm.create(config=config)
-        astra.algorithm.run(alg_id, iterations=self.sirt_iterations)
+        astra.algorithm.run(alg_id, iterations=self.reconstruction_iterations)
 
         # Retrieve reconstruction
         reconstruction = astra.data2d.get(reconstruction_id)
-        astra.algorithm.delete(alg_id)
         
+        # Cleanup
+        astra.algorithm.delete(alg_id)
+        astra.data2d.delete(reconstruction_id)
+        if free_pixels is not None:
+            astra.data2d.delete(free_pixel_sinogram_id)
+            astra.data2d.delete(free_pixels_id)
+
         return reconstruction
     
 
@@ -254,6 +260,10 @@ class DART():
                 smoothed_recon = self.smoothing(reconstruction)
                 reconstruction[free_pixels[0], free_pixels[1]] = smoothed_recon[free_pixels[0], free_pixels[1]]
         
+        # Cleanup
+        astra.data2d.delete(self.sino_id)
+        astra.projector.delete(self.projector_id)
+        
         return segmentation
 
 
@@ -263,6 +273,6 @@ if __name__ == "__main__":
     
     proj_geom, sino = create_sinogram(img, 512, 32)
 
-    dart = DART(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, sirt_iterations=25)
+    dart = DART(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, reconstruction_iterations=25)
     reconstructed_image = dart.run(0.4, [0,120,255], 100)
     saveimg(reconstructed_image, "./yuh.png")
