@@ -4,7 +4,7 @@ from PIL import Image
 from scipy.ndimage import gaussian_filter
 from copy import copy
 from source.sinograms.create_sinogram import create_sinogram
-from source.sinograms.sinograms import saveimg
+from source.utils import saveimg
 
 class DART():
     def __init__(
@@ -13,8 +13,10 @@ class DART():
             sinogram,
             img_shape,
             reconstruction_iterations,
+            supersampling_a = None,
         ):
         self.reconstruction_iterations = reconstruction_iterations
+        self.supersampling_a = supersampling_a
         self.img_shape = img_shape
 
         # Create volume geometry.
@@ -189,6 +191,8 @@ class DART():
             # If there is no free_pixel_mask given, we make a blank image from the vol_geom
             reconstruction_id = astra.data2d.create("-vol", self.vol_geom, data=0.0)
             config["ProjectionDataId"] = self.sino_id
+        if self.supersampling_a:
+            config["option"].update({"DetectorSuperSampling": self.supersampling_a})
 
         config["ReconstructionDataId"] = reconstruction_id
         config["option"].update({'MinConstraint': 0.0, 'MaxConstraint': 255.0})
@@ -258,7 +262,7 @@ class DART():
             # Smoothing
             if i != iterations:
                 smoothed_recon = self.smoothing(reconstruction)
-                reconstruction[free_pixels[0], free_pixels[1]] = smoothed_recon[free_pixels[0], free_pixels[1]]
+                reconstruction[free_pixels] = smoothed_recon[free_pixels]
         
         # Cleanup
         astra.data2d.delete(self.sino_id)
@@ -268,11 +272,11 @@ class DART():
 
 
 if __name__ == "__main__":
-    img = Image.open("./blobs/blob_0.png")
+    img = Image.open("./phantoms/blobs/blob_0.png")
     img = np.asarray(img)
     
-    proj_geom, sino = create_sinogram(img, 512, 32)
+    proj_geom, sino = create_sinogram(img, 128, 32)
 
     dart = DART(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, reconstruction_iterations=25)
     reconstructed_image = dart.run(0.4, [0,120,255], 100)
-    saveimg(reconstructed_image, "./yuh.png")
+    saveimg(reconstructed_image, "./base.png")

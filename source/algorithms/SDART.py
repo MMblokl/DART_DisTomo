@@ -304,7 +304,7 @@ if __name__ == "__main__":
     img = Image.open("./phantoms/blobs/blob_0.png")
     img = np.asarray(img)
     
-    proj_geom, sino = create_sinogram(img, 512, 32)
+    proj_geom, sino = create_sinogram(img, 128, 32)
 
     sdart = SDART(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, reconstruction_iterations=25, lambda_hp=0.24)
     reconstructed_image = sdart.run(0.4, [0,120,255], 100)
