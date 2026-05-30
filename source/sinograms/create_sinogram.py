@@ -74,6 +74,5 @@ def create_sinogram(img, n_detectors, n_projections, supersampling_a: int | None
 
     # Clean up of data
     astra.data2d.delete([sino_id, data_id])
-    astra.projector.delete(proj_id)
 
-    return proj_geom, sino
+    return proj_geom, sino, proj_id

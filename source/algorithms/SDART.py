@@ -11,19 +11,22 @@ class SDART():
     def __init__(
             self,
             proj_geom,
+            proj_id,
             sinogram,
             img_shape,
             reconstruction_iterations,
             lambda_hp,
+            supersampling_a=None,
         ):
         self.reconstruction_iterations = reconstruction_iterations
         self.img_shape = img_shape
         self.lambda_hp = lambda_hp
+        self.supersampling_a = supersampling_a
 
         # Create volume geometry.
         self.proj_geom = proj_geom
         self.vol_geom = astra.create_vol_geom(img_shape)
-        self.projector_id = astra.create_projector('cuda', proj_geom, self.vol_geom)
+        self.projector_id = proj_id
 
         # Save sinogram into a data2d object
         self.sinogram = sinogram
@@ -229,11 +232,13 @@ class SDART():
 
             # Put the free pixels as a reconstructionmask into the algorithm
             free_pixels_id = astra.data2d.create("-vol", self.vol_geom, data=free_pixels)
-            config["option"] = {"ReconstructionMaskId": free_pixels_id}
+            config["option"].update({"ReconstructionMaskId": free_pixels_id})
         else:
             # If there is no free_pixel_mask given, we make a blank image from the vol_geom
             reconstruction_id = astra.data2d.create("-vol", self.vol_geom, data=0.0)
             config["ProjectionDataId"] = self.sino_id
+        if self.supersampling_a:
+            config["option"].update({"DetectorSuperSampling": self.supersampling_a})
 
         config["ReconstructionDataId"] = reconstruction_id
         config["option"].update({'MinConstraint': 0.0, 'MaxConstraint': 255.0})
@@ -301,11 +306,11 @@ class SDART():
 
 
 if __name__ == "__main__":
-    img = Image.open("./phantoms/blobs/blob_0.png")
+    img = Image.open("./phantoms/bones/bone_0.png")
     img = np.asarray(img)
     
-    proj_geom, sino = create_sinogram(img, 128, 32)
+    proj_geom, sino, proj_id = create_sinogram(img, 128, 32)
 
-    sdart = SDART(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, reconstruction_iterations=25, lambda_hp=0.24)
+    sdart = SDART(proj_geom=proj_geom, proj_id=proj_id, sinogram=sino, img_shape=img.shape, reconstruction_iterations=25, lambda_hp=0.24)
     reconstructed_image = sdart.run(0.4, [0,120,255], 100)
-    saveimg(reconstructed_image, "./yuh.png")
+    saveimg(reconstructed_image, "./base.png")

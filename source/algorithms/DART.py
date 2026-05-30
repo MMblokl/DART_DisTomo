@@ -10,6 +10,7 @@ class DART():
     def __init__(
             self,
             proj_geom,
+            proj_id,
             sinogram,
             img_shape,
             reconstruction_iterations,
@@ -22,7 +23,7 @@ class DART():
         # Create volume geometry.
         self.proj_geom = proj_geom
         self.vol_geom = astra.create_vol_geom(img_shape)
-        self.projector_id = astra.create_projector('cuda', proj_geom, self.vol_geom)
+        self.projector_id = proj_id
 
         # Save sinogram into a data2d object
         self.sinogram = sinogram
@@ -275,8 +276,8 @@ if __name__ == "__main__":
     img = Image.open("./phantoms/blobs/blob_0.png")
     img = np.asarray(img)
     
-    proj_geom, sino = create_sinogram(img, 128, 32)
+    proj_geom, sino, proj_id = create_sinogram(img, 128, 32)
 
-    dart = DART(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, reconstruction_iterations=25)
+    dart = DART(proj_geom=proj_geom, proj_id=proj_id, sinogram=sino, img_shape=img.shape, reconstruction_iterations=25)
     reconstructed_image = dart.run(0.4, [0,120,255], 100)
     saveimg(reconstructed_image, "./base.png")
