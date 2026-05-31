@@ -9,10 +9,8 @@ class SIRT:
             proj_id,
             sinogram,
             img_shape,
-            reconstruction_iterations,
             supersampling_a = None,
         ):
-        self.reconstruction_iterations = reconstruction_iterations
         self.supersampling_a = supersampling_a
         self.img_shape = img_shape
 
@@ -25,7 +23,7 @@ class SIRT:
         self.sinogram = sinogram
         self.sino_id = astra.data2d.create('-sino', self.proj_geom, data=sinogram)
     
-    def run(self):
+    def run(self, iterations):
         """ Create a SIRT reconstruction for the given input image, free_pixel mask.
         If free_pixels is None, then an initial reconstruction from the sinogram in self.sino is
         taken with an empty prior reconstruction.
@@ -52,7 +50,7 @@ class SIRT:
         
         # Run the algorithm
         alg_id = astra.algorithm.create(config=config)
-        astra.algorithm.run(alg_id, iterations=self.reconstruction_iterations)
+        astra.algorithm.run(alg_id, iterations=iterations)
 
         # Retrieve reconstruction
         reconstruction = astra.data2d.get(reconstruction_id)

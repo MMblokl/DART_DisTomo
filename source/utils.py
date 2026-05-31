@@ -14,12 +14,13 @@ def rescale(array):
     return array
 
 
-def saveimg(array, name):
+def saveimg(array: np.ndarray, name: str):
     """Saves ndarray as PIL image png.
 
     Args:
         Array (np.ndarray): Input image
         Name (string): Location to save
     """
+    array = array.astype(np.uint8)
     array = Image.fromarray(array)
     array.save(name)
