@@ -126,7 +126,7 @@ class SDART():
 
         # Use lsqr with the same number of iterations as SIRT for DART.
         reconstruction = lsqr(A, right, iter_lim=self.reconstruction_iterations)[0]
-        reconstruction = reconstruction.reshape(512,512)
+        reconstruction = reconstruction.reshape(self.img_shape)
         
         # Rescale to 255
         reconstruction = rescale(reconstruction)
@@ -185,7 +185,7 @@ class SDART():
             
             # Fill segmented areas into ouput with gray values for that specific threshold
             output_img[segmentation] = gray_intensities[i]
-        
+
         return output_img
 
 
@@ -260,11 +260,10 @@ class SDART():
         return reconstruction
     
 
-    def run(self, p: int, gray_intensities: list, iterations: int):
+    def run(self, gray_intensities: list, iterations: int):
         """Run the DART algorithm according to the initializated values.
         
         Args:
-            p (integer): Probability of sampling a pixel as a fixed pixel.
             gray_intensities (list | tuple): List of prior gray intensity levels.
             iterations (integer): Number of DART iterations.
         
@@ -309,8 +308,8 @@ if __name__ == "__main__":
     img = Image.open("./phantoms/bones/bone_0.png")
     img = np.asarray(img)
     
-    proj_geom, sino, proj_id = create_sinogram(img, 128, 32)
+    proj_geom, sino, proj_id = create_sinogram(img, 128, 32, supersampling_a=4)
 
-    sdart = SDART(proj_geom=proj_geom, proj_id=proj_id, sinogram=sino, img_shape=img.shape, reconstruction_iterations=25, lambda_hp=0.24)
-    reconstructed_image = sdart.run(0.4, [0,120,255], 100)
-    saveimg(reconstructed_image, "./base.png")
+    sdart = SDART(proj_geom=proj_geom, proj_id=proj_id, sinogram=sino, img_shape=img.shape, reconstruction_iterations=10, lambda_hp=0.1, supersampling_a=4)
+    reconstructed_image = sdart.run([0, 110, 150, 220], 100)
+    saveimg(reconstructed_image, "./base4.png")

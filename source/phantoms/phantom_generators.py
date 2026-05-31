@@ -6,35 +6,11 @@ from os import makedirs
 from os.path import isdir
 from scipy.spatial import Voronoi, voronoi_plot_2d
 from skimage import draw, morphology
+from source.utils import saveimg
 
 # Define random seed for numpy as random module
 random.seed(167)
 np.random.seed(167)
-
-# First phantom
-resolution = 512 # Image resolution; rXr
-shape_var = 25 # Maximum size of random shape sizes.
-margin = 75 # Outer margin for generating shape locations. Larger margin is more empty space in between object and image border.
-background_amt = 60 # Number of background, dark shapes
-foreground_amt = 10 # Number of foreground, light shapes
-
-# Second phantom:
-resolution = 512
-n_points = 100 # Number of points to draw voronoi neighbourhoods from.
-margin = 40 # Margin of empty space to not generate lines in, used in point clipping.
-
-# Third phantom
-resolution = 512
-margin = 120 # Number of pixels to add as padding between the border of the image, prevents the shapes from touching image borders
-shape_var = 60 # The maximum size of the shapes drawn in random shape values
-# Number of shapes for outer shape and core objects.
-n_outer = 40
-n_core = 80
-# The intensities of the 3 drawn regions used for the phantom
-outer_intensity = 150
-inner_intensity = 220
-core_intensity = 110
-
 
 def gen_blob(seed, quant, source_dir, resolution, shape_var, margin, background_amt, foreground_amt):
   random.seed(seed)
@@ -188,11 +164,9 @@ def gen_bone(seed, quant, source_dir, resolution, margin, shape_var, n_outer, n_
     # Closing with a disk to fill out any holes in between randomly placed shaped
     mask_outer = morphology.binary_closing(mask_outer, morphology.disk(15))
     img[mask_outer] = outer_intensity # Fill drawn shapes with defined intensity
-
     # Create the inner region of higher contrast withing the outer region
     mask_inner = morphology.binary_erosion(mask_outer, morphology.disk(35)) # Binary erosion of a copy of the outer region.
     img[mask_inner] = inner_intensity # Fill inner region with defined intensity
-
 
     # Add spots as darker gray regions in the light background
     core = np.zeros_like(img)
