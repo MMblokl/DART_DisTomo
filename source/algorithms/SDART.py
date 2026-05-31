@@ -192,7 +192,6 @@ class SDART():
     def reconstruct(
             self,
             reconstruction: np.ndarray | None = None,
-            free_pixels: np.ndarray | None = None,
         ):
         """ Create a SIRT reconstruction for the given input image, free_pixel mask.
         If free_pixels is None, then an initial reconstruction from the sinogram in self.sino is
@@ -207,36 +206,10 @@ class SDART():
 
         config = astra.astra_dict("SIRT_CUDA")
         config["option"] = {}
-        
-        # None if this is the first initial reconstruction
-        if free_pixels is not None:
-            # Create free_pixels dataid
-            free_pix_idx = np.where(free_pixels != 0)
-            rec = copy(reconstruction)
-            
-            # Remove the free pixels from the sinogram
-            rec[free_pix_idx] = 0
-            
-            # Create sino from free pixels
-            _, fixed_sinogram = astra.create_sino(rec, self.projector_id)
-            
-            # Free pixel sinogram is the difference between fixed and main sinogram
-            free_pixel_sinogram = self.sinogram - fixed_sinogram
-
-            # Create a data2d object for use in the algorithm
-            free_pixel_sinogram_id = astra.data2d.create("-sino", self.proj_geom, data=free_pixel_sinogram)
-            reconstruction_id = astra.data2d.create("-vol", self.vol_geom, data=rec)
-
-            # Put the free pixel sinogram into config
-            config["ProjectionDataId"] = free_pixel_sinogram_id
-
-            # Put the free pixels as a reconstructionmask into the algorithm
-            free_pixels_id = astra.data2d.create("-vol", self.vol_geom, data=free_pixels)
-            config["option"].update({"ReconstructionMaskId": free_pixels_id})
-        else:
-            # If there is no free_pixel_mask given, we make a blank image from the vol_geom
-            reconstruction_id = astra.data2d.create("-vol", self.vol_geom, data=0.0)
-            config["ProjectionDataId"] = self.sino_id
+    
+        # If there is no free_pixel_mask given, we make a blank image from the vol_geom
+        reconstruction_id = astra.data2d.create("-vol", self.vol_geom, data=0.0)
+        config["ProjectionDataId"] = self.sino_id
         if self.supersampling_a:
             config["option"].update({"DetectorSuperSampling": self.supersampling_a})
 
@@ -253,10 +226,7 @@ class SDART():
         # Cleanup
         astra.algorithm.delete(alg_id)
         astra.data2d.delete(reconstruction_id)
-        if free_pixels is not None:
-            astra.data2d.delete(free_pixel_sinogram_id)
-            astra.data2d.delete(free_pixels_id)
-
+        
         return reconstruction
     
 
