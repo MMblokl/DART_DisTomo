@@ -1,6 +1,10 @@
 import astra
 import numpy as np
 from copy import copy
+from PIL import Image
+from source.sinograms.create_sinogram import create_sinogram
+from source.utils import saveimg
+from source.metrics import calc_rnmp, calc_ssim
 
 class SIRT:
     def __init__(
@@ -8,10 +12,8 @@ class SIRT:
             proj_geom,
             sinogram,
             img_shape,
-            reconstruction_iterations,
             supersampling_a = None,
         ):
-        self.reconstruction_iterations = reconstruction_iterations
         self.supersampling_a = supersampling_a
         self.img_shape = img_shape
 
@@ -27,7 +29,7 @@ class SIRT:
         self.sinogram = sinogram
         self.sino_id = astra.data2d.create('-sino', self.proj_geom, data=sinogram)
     
-    def run(self):
+    def run(self, iterations: int):
         """ Create a SIRT reconstruction for the given input image, free_pixel mask.
         If free_pixels is None, then an initial reconstruction from the sinogram in self.sino is
         taken with an empty prior reconstruction.
@@ -54,7 +56,7 @@ class SIRT:
         
         # Run the algorithm
         alg_id = astra.algorithm.create(config=config)
-        astra.algorithm.run(alg_id, iterations=self.reconstruction_iterations)
+        astra.algorithm.run(alg_id, iterations=iterations)
 
         # Retrieve reconstruction
         reconstruction = astra.data2d.get(reconstruction_id)
@@ -64,3 +66,18 @@ class SIRT:
         astra.data2d.delete(reconstruction_id)
 
         return reconstruction
+
+
+if __name__ == "__main__":
+    img = Image.open("./phantoms/meshes/mesh_0.png")
+    img = np.asarray(img)
+    
+    proj_geom, sino = create_sinogram(img, 128, 512, supersampling_a=None)
+
+    dart = SIRT(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, supersampling_a=None)
+    reconstructed_image = dart.run(iterations=100)
+
+    print("RNMP, SSIM")
+    print(calc_rnmp(img, reconstructed_image), calc_ssim(img, reconstructed_image))
+
+    saveimg(reconstructed_image, "./base.png")

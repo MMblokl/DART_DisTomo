@@ -281,8 +281,8 @@ if __name__ == "__main__":
     img = Image.open("./phantoms/bones/bone_0.png")
     img = np.asarray(img)
     
-    proj_geom, sino, proj_id = create_sinogram(img, 128, 32, supersampling_a=4)
+    proj_geom, sino = create_sinogram(img, 128, 32, supersampling_a=4)
 
-    sdart = SDART(proj_geom=proj_geom, proj_id=proj_id, sinogram=sino, img_shape=img.shape, reconstruction_iterations=10, lambda_hp=0.1, supersampling_a=4)
+    sdart = SDART(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, reconstruction_iterations=10, lambda_hp=0.1, supersampling_a=4)
     reconstructed_image = sdart.run([0, 110, 150, 220], 100)
     saveimg(reconstructed_image, "./base4.png")

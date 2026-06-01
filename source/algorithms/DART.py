@@ -5,6 +5,7 @@ from scipy.ndimage import gaussian_filter
 from copy import copy
 from source.sinograms.create_sinogram import create_sinogram
 from source.utils import saveimg
+from source.metrics import calc_rnmp, calc_ssim
 
 class DART():
     def __init__(
@@ -275,11 +276,15 @@ class DART():
 
 
 if __name__ == "__main__":
-    img = Image.open("./phantoms/blobs/blob_0.png")
+    img = Image.open("./phantoms/meshes/mesh_0.png")
     img = np.asarray(img)
     
-    proj_geom, sino, proj_id = create_sinogram(img, 128, 32)
+    proj_geom, sino = create_sinogram(img=img, n_detectors=64, n_projections=180, supersampling_a=8)
 
-    dart = DART(proj_geom=proj_geom, proj_id=proj_id, sinogram=sino, img_shape=img.shape, reconstruction_iterations=25)
-    reconstructed_image = dart.run(0.4, [0,120,255], 100)
-    saveimg(reconstructed_image, "./base.png")
+    dart = DART(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, reconstruction_iterations=50, supersampling_a=8)
+    reconstructed_image = dart.run(p=0.4, gray_intensities=[0,255], iterations=100)
+
+    print("RNMP, SSIM")
+    print(calc_rnmp(img, reconstructed_image), calc_ssim(img, reconstructed_image))
+
+    saveimg(reconstructed_image, "./super4.png")
