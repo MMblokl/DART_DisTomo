@@ -11,7 +11,6 @@ class SDART():
     def __init__(
             self,
             proj_geom,
-            proj_id,
             sinogram,
             img_shape,
             reconstruction_iterations,
@@ -26,7 +25,11 @@ class SDART():
         # Create volume geometry.
         self.proj_geom = proj_geom
         self.vol_geom = astra.create_vol_geom(img_shape)
-        self.projector_id = proj_id
+        if self.supersampling_a:
+            self.projector_id = astra.create_projector('cuda', self.proj_geom, self.vol_geom, options={"DetectorSuperSampling": supersampling_a})
+        else:
+            self.projector_id = astra.create_projector('cuda', self.proj_geom, self.vol_geom)
+
 
         # Save sinogram into a data2d object
         self.sinogram = sinogram

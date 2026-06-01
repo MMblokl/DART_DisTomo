@@ -6,24 +6,28 @@ class SIRT:
     def __init__(
             self,
             proj_geom,
-            proj_id,
             sinogram,
             img_shape,
+            reconstruction_iterations,
             supersampling_a = None,
         ):
+        self.reconstruction_iterations = reconstruction_iterations
         self.supersampling_a = supersampling_a
         self.img_shape = img_shape
 
         # Create volume geometry.
         self.proj_geom = proj_geom
         self.vol_geom = astra.create_vol_geom(img_shape)
-        self.projector_id = proj_id
-
+        if self.supersampling_a:
+            self.projector_id = astra.create_projector('cuda', self.proj_geom, self.vol_geom, options={"DetectorSuperSampling": supersampling_a})
+        else:
+            self.projector_id = astra.create_projector('cuda', self.proj_geom, self.vol_geom)
+        
         # Save sinogram into a data2d object
         self.sinogram = sinogram
         self.sino_id = astra.data2d.create('-sino', self.proj_geom, data=sinogram)
     
-    def run(self, iterations):
+    def run(self):
         """ Create a SIRT reconstruction for the given input image, free_pixel mask.
         If free_pixels is None, then an initial reconstruction from the sinogram in self.sino is
         taken with an empty prior reconstruction.
@@ -50,7 +54,7 @@ class SIRT:
         
         # Run the algorithm
         alg_id = astra.algorithm.create(config=config)
-        astra.algorithm.run(alg_id, iterations=iterations)
+        astra.algorithm.run(alg_id, iterations=self.reconstruction_iterations)
 
         # Retrieve reconstruction
         reconstruction = astra.data2d.get(reconstruction_id)

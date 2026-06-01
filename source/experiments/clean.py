@@ -14,18 +14,16 @@ for phantom_group in glob.glob("./phantoms/*"):
         img = Image.open("./phantoms/blobs/blob_0.png")
         img = np.asarray(img)
     
-        proj_geom, sino, proj_id = create_sinogram(img, 128, 32)
+        proj_geom, sino, = create_sinogram(img, 128, 32, supersampling_a=1)
 
         sirt = SIRT.SIRT(
             proj_geom=proj_geom,
-            proj_id=proj_id,
             sinogram=sino,
             img_shape=img.shape,
             supersampling_a=4
         )
         dart = DART.DART(
             proj_geom=proj_geom,
-            proj_id=proj_id,
             sinogram=sino,
             img_shape=img.shape,
             reconstruction_iterations=10,
