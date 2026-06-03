@@ -6,7 +6,7 @@ from source.sinograms.create_sinogram import create_sinogram
 from source.utils import saveimg
 from source.metrics import calc_rnmp, calc_ssim
 
-class SIRT:
+class SSIRT:
     def __init__(
             self,
             proj_geom,
@@ -84,7 +84,7 @@ class SIRT:
         return output_img
 
 
-    def run(self, iterations: int):
+    def run(self, gray_intensities: list, iterations: int):
         """ Create a SIRT reconstruction for the given input image, free_pixel mask.
         If free_pixels is None, then an initial reconstruction from the sinogram in self.sino is
         taken with an empty prior reconstruction.
@@ -120,7 +120,11 @@ class SIRT:
         astra.algorithm.delete(alg_id)
         astra.data2d.delete(reconstruction_id)
 
-        return reconstruction
+        # Define thresholds for pre-defined gray values
+        thresholds = self.gray_thresholds(gray_intensities)
+        segmentation = self.segment(img=reconstruction, thresholds=thresholds, gray_intensities=gray_intensities)
+
+        return segmentation
 
 
 if __name__ == "__main__":
