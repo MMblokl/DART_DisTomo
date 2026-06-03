@@ -29,6 +29,61 @@ class SIRT:
         self.sinogram = sinogram
         self.sino_id = astra.data2d.create('-sino', self.proj_geom, data=sinogram)
     
+
+    def gray_thresholds(
+            self,
+            gray_intensities: list | tuple,
+        ) -> list:
+        """Define threshold array based on input gray_values.
+        Uses formula:
+        Tau_i = ( rho_i + rho_i+1 ) / 2
+        Where Tau is the threshold for gray value rho on position i in the array.
+        
+        Args:
+            gray_intensities (list | tuple or array_like): List of known gray levels in the image from low to high.
+        
+        Returns:
+            List of gray value thresholds according to the formula.
+        """
+        # 
+        # Pad with 0 and 255 at start and end
+        thresholds = [0] + [
+            (gray_intensities[i] + gray_intensities[i+1]) / 2
+            for i in range(len(gray_intensities) - 1)
+        ] + [255]
+
+        return thresholds
+
+    def segment(
+            self,
+            inp: np.ndarray,
+            thresholds: list | tuple,
+            gray_intensities: list | tuple,
+        ):
+        """ Creates a simple segmentation according to the thresholds given in thresholds.
+
+        Args:
+            inp (np.ndarray): Input image.
+            threshold (list | tuple): Array of thresholds for each gray level value.
+            gray_intensities (list | tuple):  Array of prior gray levels defined by the user for each threshold.
+        
+        Returns:
+            Segmented image where each pixel from in the input image is thresholded for
+            each threshold i in thresholds, and replaced by gray_intensities[i]if it is in
+            between the current and next threshold.
+        """
+        output_img = np.zeros(inp.shape, dtype=np.uint8)
+
+        for i, threshold in enumerate(thresholds[:-1]):
+            # At each pixel of the input, get indexes that are both above current threshold and are not above the next threshold
+            segmentation = (inp >= threshold) * (inp <= thresholds[i + 1])
+            
+            # Fill segmented areas into ouput with gray values for that specific threshold
+            output_img[segmentation] = gray_intensities[i]
+        
+        return output_img
+
+
     def run(self, iterations: int):
         """ Create a SIRT reconstruction for the given input image, free_pixel mask.
         If free_pixels is None, then an initial reconstruction from the sinogram in self.sino is

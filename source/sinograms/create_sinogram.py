@@ -57,7 +57,7 @@ def create_sinogram(img, n_detectors, n_projections, supersampling_a: int | None
     vol_geom = astra.create_vol_geom(*img.shape) 
     data_id = astra.data2d.create('-vol', vol_geom, img)
     
-    # Make sure detector is shaped AROUND image
+    # Makes sure the detector is as wide as the image
     resolution = img.shape[0]
     spacing = resolution / n_detectors
 

@@ -8,8 +8,8 @@ def rescale(array):
         Array (np.ndarray): Input image
     """
     array[array < 0] = 0 # Remove any under zero values
-    array = array/array.max() # Rescale to 0-1
-    array = np.clip(array*255, 0, 255).astype(np.uint8) # Clip to 0,255 range
+    #array = array/array.max() # Rescale to 0-1
+    array = np.clip(array, 0, 255).astype(np.uint8) # Clip to 0,255 range
     
     return array
 

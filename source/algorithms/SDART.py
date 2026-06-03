@@ -131,6 +131,7 @@ class SDART():
         reconstruction = lsqr(A, right, iter_lim=self.reconstruction_iterations)[0]
         reconstruction = reconstruction.reshape(self.img_shape)
         
+        breakpoint()
         # Rescale to 255
         reconstruction = rescale(reconstruction)
 
