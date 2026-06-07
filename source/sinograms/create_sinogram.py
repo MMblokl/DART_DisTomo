@@ -1,7 +1,9 @@
 import astra
 import numpy as np
 
-def create_sino(data, proj_id, returnData=True, gpuIndex=None, supersampling_a=None):
+
+# Function copied from astra toolbox with an option for supersampling.
+def create_fp(data, proj_id, returnData=True, gpuIndex=None, supersampling_a: int | None = None):
     """Create a forward projection of an image (2D).
 
     :param data: Image data or ID.
@@ -12,6 +14,8 @@ def create_sino(data, proj_id, returnData=True, gpuIndex=None, supersampling_a=N
     :type returnData: :class:`bool`
     :param gpuIndex: Optional GPU index.
     :type gpuIndex: :class:`int`
+    :param supersampling_a: Supersampling_a value.
+    :type supersampling_a:class`int`|`None`
     :returns: :class:`int` or (:class:`int`, :class:`numpy.ndarray`)
 
     If ``returnData=False``, returns the ID of the forward
@@ -57,20 +61,17 @@ def create_sinogram(img, n_detectors, n_projections, supersampling_a: int | None
     vol_geom = astra.create_vol_geom(*img.shape) 
     data_id = astra.data2d.create('-vol', vol_geom, img)
     
-    # Makes sure the detector is as wide as the image
-    resolution = img.shape[0]
-    spacing = resolution / n_detectors
+    # Makes sure the plane of detectors spans the entire pixel grid resolution / number of detectors.
+    spacing = img.shape[0] / n_detectors
+    # Supersampling, make each pixel in the image grid have a projection ray.
+    if supersampling_a is None:
+        supersampling_a = spacing
 
     # Projections using np.linspace, cutting off the last element of np.pi
     proj_geom = astra.create_proj_geom('parallel', spacing, n_detectors, np.linspace(0, np.pi, n_projections + 1)[:-1])
-    if supersampling_a:
-        proj_id = astra.create_projector('cuda', proj_geom, vol_geom, options={"DetectorSuperSampling": supersampling_a})
-        # Create the sinogram
-        sino_id, sino = create_sino(data_id, proj_id, supersampling_a=supersampling_a)
-    else:
-        # Create the sinogram
-        proj_id = astra.create_projector('cuda', proj_geom, vol_geom)
-        sino_id, sino = create_sino(data_id, proj_id)
+    proj_id = astra.create_projector('cuda', proj_geom, vol_geom, options={"DetectorSuperSampling": supersampling_a})
+    # Create the sinogram
+    sino_id, sino = create_fp(data_id, proj_id, supersampling_a=supersampling_a)
 
     # Clean up of data
     astra.data2d.delete([sino_id, data_id])

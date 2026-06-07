@@ -133,8 +133,8 @@ if __name__ == "__main__":
     
     proj_geom, sino = create_sinogram(img, 128, 512, supersampling_a=None)
 
-    dart = SIRT(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, supersampling_a=None)
-    reconstructed_image = dart.run(iterations=100)
+    dart = SSIRT(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, supersampling_a=None)
+    reconstructed_image = dart.run(iterations=100, gray_intensities=[0,255])
 
     print("RNMP, SSIM")
     print(calc_rnmp(img, reconstructed_image), calc_ssim(img, reconstructed_image))
