@@ -122,7 +122,7 @@ class SSIRT:
 
         # Define thresholds for pre-defined gray values
         thresholds = self.gray_thresholds(gray_intensities)
-        segmentation = self.segment(img=reconstruction, thresholds=thresholds, gray_intensities=gray_intensities)
+        segmentation = self.segment(inp=reconstruction, thresholds=thresholds, gray_intensities=gray_intensities)
 
         return segmentation
 

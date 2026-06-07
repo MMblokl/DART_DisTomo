@@ -5,45 +5,76 @@ from source.metrics import calc_rnmp, calc_ssim
 import glob
 from PIL import Image
 import numpy as np
-from skimage.filters import threshold_otsu
 
 
+a_vals = [0,4,8,16]
+base_dict = {"ssirt": [], "dart": [], "sdart": []}
 
 for phantom_group in glob.glob("./phantoms/*"):
+    results = {
+        "blob": {
+            1: {"ssirt": [], "dart": [], "sdart": []},
+            4: {"ssirt": [], "dart": [], "sdart": []},
+            8: {"ssirt": [], "dart": [], "sdart": []},
+            16: {"ssirt": [], "dart": [], "sdart": []}
+        },
+        "bone": {
+            1: {"ssirt": [], "dart": [], "sdart": []},
+            4: {"ssirt": [], "dart": [], "sdart": []},
+            8: {"ssirt": [], "dart": [], "sdart": []},
+            16: {"ssirt": [], "dart": [], "sdart": []}
+        },
+        "mesh": {
+            1: {"ssirt": [], "dart": [], "sdart": []},
+            4: {"ssirt": [], "dart": [], "sdart": []},
+            8: {"ssirt": [], "dart": [], "sdart": []},
+            16: {"ssirt": [], "dart": [], "sdart": []}
+        },
+    }
     for phantom in glob.glob(f"{phantom_group}/*.png"):
-        img = Image.open("./phantoms/blobs/blob_0.png")
+        phantom = "./phantoms/meshes/mesh_0.png"
+        if "blob" in phantom:
+            grey_intensities = [0,120,255]
+            p_group = "blob"
+        elif "bone" in phantom:
+            grey_intensities = [0, 110, 150, 220]
+            p_group = "bone"
+        else:
+            grey_intensities = [0,255]
+            p_group = "mesh"
+        img = Image.open(phantom)
         img = np.asarray(img)
     
-        proj_geom, sino, = create_sinogram(img, 128, 180, supersampling_a=4)
+        proj_geom, sino, = create_sinogram(img, 64, 180)
 
-        sirt_1 = SSIRT.SSIRT(
-            proj_geom=proj_geom,
-            sinogram=sino,
-            img_shape=img.shape,
-            supersampling_a=1
-        )
-        sirt_4 = SSIRT.SSIRT(
-            proj_geom=proj_geom,
-            sinogram=sino,
-            img_shape=img.shape,
-            supersampling_a=4
-        )
-        sirt_8 = SSIRT.SSIRT(
-            proj_geom=proj_geom,
-            sinogram=sino,
-            img_shape=img.shape,
-            supersampling_a=8
-        )
+        for a_val in a_vals:
+            ssirt = SSIRT.SSIRT(
+                proj_geom=proj_geom,
+                sinogram=sino,
+                img_shape=img.shape,
+                supersampling_a=a_val
+            )
+            dart = DART.DART(
+                proj_geom=proj_geom,
+                sinogram=sino,
+                img_shape=img.shape,
+                supersampling_a=a_val,
+                reconstruction_iterations=100,
+            )
+            sdart = SDART.SDART(
+                proj_geom=proj_geom,
+                sinogram=sino,
+                img_shape=img.shape,
+                supersampling_a=a_val,
+                lambda_hp=0.24,
+                reconstruction_iterations=10,
+            )
 
-        # Show off results
+            ssirt_res = ssirt.run(gray_intensities=grey_intensities, iterations=100)
+            dart_res = dart.run(p=0.4, gray_intensities=grey_intensities, iterations=100)
+            sdart_res = sdart.run(gray_intensities=grey_intensities, iterations=100)
 
-        sirt_res = sirt.run(iterations=100)
-        saveimg(sirt_res, "sirt_base.png")
-        saveimg(dart_res, "dart_base.png")
-        
-        breakpoint()
-        sirt_thresh = threshold_otsu(sirt_res)
-        saveimg(sirt_thresh, "sirt_thresh.png")
-        
-        breakpoint()
+            results[p_group][a_val]["ssirt"].append({"rnmp": calc_rnmp(img, ssirt_res), "ssim": calc_ssim(img, ssirt_res)})
+            results[p_group][a_val]["dart"].append({"rnmp": calc_rnmp(img, dart_res), "ssim": calc_ssim(img, dart_res)})
+            results[p_group][a_val]["sdart"].append({"rnmp": calc_rnmp(img, sdart_res), "ssim": calc_ssim(img, sdart_res)})
 

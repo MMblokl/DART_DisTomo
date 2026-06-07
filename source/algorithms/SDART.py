@@ -6,6 +6,7 @@ from scipy.sparse.linalg import lsqr, LinearOperator
 from copy import copy
 from source.sinograms.create_sinogram import create_sinogram
 from source.utils import rescale, saveimg
+from source.metrics import calc_rnmp, calc_ssim
 
 class SDART():
     def __init__(
@@ -131,7 +132,6 @@ class SDART():
         reconstruction = lsqr(A, right, iter_lim=self.reconstruction_iterations)[0]
         reconstruction = reconstruction.reshape(self.img_shape)
         
-        breakpoint()
         # Rescale to 255
         reconstruction = rescale(reconstruction)
 
@@ -279,11 +279,30 @@ class SDART():
 
 
 if __name__ == "__main__":
-    img = Image.open("./phantoms/bones/bone_0.png")
+    img = Image.open("./phantoms/meshes/mesh_0.png")
     img = np.asarray(img)
     
-    proj_geom, sino = create_sinogram(img, 128, 32, supersampling_a=4)
+    proj_geom, sino = create_sinogram(img, 64, 180)
 
-    sdart = SDART(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, reconstruction_iterations=10, lambda_hp=0.1, supersampling_a=4)
-    reconstructed_image = sdart.run([0, 110, 150, 220], 100)
-    saveimg(reconstructed_image, "./base4.png")
+    sdart1 = SDART(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, reconstruction_iterations=10, lambda_hp=0.24, supersampling_a=1)
+    sdart4 = SDART(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, reconstruction_iterations=10, lambda_hp=0.24, supersampling_a=4)
+    sdart8 = SDART(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, reconstruction_iterations=10, lambda_hp=0.24, supersampling_a=8)
+    sdart16 = SDART(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, reconstruction_iterations=10, lambda_hp=0.24, supersampling_a=16)
+
+    reconstructed_image_1 = sdart1.run([0, 255], 100)
+    reconstructed_image_4 = sdart4.run([0, 255], 100)
+    reconstructed_image_8 = sdart8.run([0, 255], 100)
+    reconstructed_image_16 = sdart16.run([0, 255], 100)
+
+    saveimg(reconstructed_image_1, "./sdart1.png")
+    saveimg(reconstructed_image_4, "./sdart4.png")
+    saveimg(reconstructed_image_8, "./sdart8.png")
+    saveimg(reconstructed_image_16, "./sdart16.png")
+
+    print("RNMP, SSIM")
+    print(calc_rnmp(img, reconstructed_image_1), calc_ssim(img, reconstructed_image_1))
+    print(calc_rnmp(img, reconstructed_image_4), calc_ssim(img, reconstructed_image_4))
+    print(calc_rnmp(img, reconstructed_image_8), calc_ssim(img, reconstructed_image_8))
+    print(calc_rnmp(img, reconstructed_image_16), calc_ssim(img, reconstructed_image_16))
+
+

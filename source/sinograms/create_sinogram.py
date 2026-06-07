@@ -65,7 +65,7 @@ def create_sinogram(img, n_detectors, n_projections, supersampling_a: int | None
     spacing = img.shape[0] / n_detectors
     # Supersampling, make each pixel in the image grid have a projection ray.
     if supersampling_a is None:
-        supersampling_a = spacing
+        supersampling_a = int(spacing)
 
     # Projections using np.linspace, cutting off the last element of np.pi
     proj_geom = astra.create_proj_geom('parallel', spacing, n_detectors, np.linspace(0, np.pi, n_projections + 1)[:-1])
