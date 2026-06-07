@@ -64,7 +64,7 @@ for phantom_group in glob.glob("./phantoms/*"):
 
 
 for phantom_group in results.keys():
-    for p_val in results[phantom].keys():
+    for p_val in results[phantom_group].keys():
         for n_detectors in results[phantom_group][p_val].keys():
             final_results[phantom_group][p_val][n_detectors]["rnmp"] = np.mean(results[phantom_group][p_val][n_detectors]["rnmp"])
             final_results[phantom_group][p_val][n_detectors]["ssim"] = np.mean(results[phantom_group][p_val][n_detectors]["ssim"])

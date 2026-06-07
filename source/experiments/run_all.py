@@ -129,7 +129,7 @@ for phantom_group in glob.glob("./phantoms/*"):
     print(f"Finished famility {phantom_group}.")
 
 for phantom_group in results.keys():
-    for a_val in results[phantom].keys():
+    for a_val in results[phantom_group].keys():
         for recon_alg in results[phantom_group][a_val].keys():
             final_results[phantom_group][a_val][recon_alg]["rnmp"] = np.mean(results[phantom_group][a_val][recon_alg]["rnmp"])
             final_results[phantom_group][a_val][recon_alg]["ssim"] = np.mean(results[phantom_group][a_val][recon_alg]["ssim"])
