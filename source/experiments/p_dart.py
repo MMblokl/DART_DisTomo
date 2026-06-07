@@ -26,7 +26,6 @@ final_results = {
     } for phantom in phantoms
 }
 
-breakpoint()
 for phantom_group in glob.glob("./phantoms/*"):
     for phantom in glob.glob(f"{phantom_group}/*.png"):
         if "blob" in phantom:

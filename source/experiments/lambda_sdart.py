@@ -26,7 +26,6 @@ final_results = {
     } for phantom in phantoms
 }
 
-breakpoint()
 for phantom_group in glob.glob("./phantoms/*"):
     for phantom in glob.glob(f"{phantom_group}/*.png"):
         if "blob" in phantom:
@@ -72,5 +71,5 @@ for phantom_group in results.keys():
             final_results[phantom_group][lambda_val][n_detectors]["ssim"] = np.mean(results[phantom_group][lambda_val][n_detectors]["ssim"])
 
 
-with open("p_dart_results.json", "w") as f:
+with open("lambda_results.json", "w") as f:
     json.dump(final_results, f)
