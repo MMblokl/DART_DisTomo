@@ -2,6 +2,17 @@
 Discrete tomographic reconstruction techniques DART, SDART and SSIRT, implemented using sklearn and the astra toolbox.
 Requires a functional Nvidia GPU to use, as the ASTRA implementations only use CUDA.
 
+## References
+#### [S-SIRT](https://doi.org/10.1109/TIP.2013.2297025):
+Aarle, Wim & Batenburg, Kees & Van Gompel, Gert & Van de Casteele, Elke & Sijbers, Jan. (2014). Super-Resolution for Computed Tomography Based on Discrete Tomography. Image Processing, IEEE Transactions on. 23. 1181-1193. 10.1109/TIP.2013.2297025. 
+
+#### [DART](https://doi.org/10.1109/TIP.2011.2131661):
+Batenburg, Kees & Sijbers, Jan. (2011). DART: A Practical Reconstruction Algorithm for Discrete Tomography. IEEE transactions on image processing : a publication of the IEEE Signal Processing Society. 20. 2542-53. 10.1109/TIP.2011.2131661. 
+
+#### [SDART](https://doi.org/10.1016/j.cviu.2014.06.002):
+Bleichrodt, Folkert & Tabak, F. & Batenburg, Kees. (2014). SDART: An algorithm for discrete tomography from noisy projections. Computer Vision and Image Understanding. 129. 63–74. 10.1016/j.cviu.2014.06.002. 
+
+
 ## Required packages
 Install required packages through `python-venv` or `uv`. `uv` is easier to use so that is recommended.
 
