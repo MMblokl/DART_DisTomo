@@ -181,7 +181,6 @@ Here are some sample reconstructions of the example mesh phantom.
       <td>0.8669</td>
       <td>0.9202</td>
     </tr>
-
     <tr>
       <td rowspan="4">Blob</td>
       <td>1</td>
