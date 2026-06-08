@@ -15,7 +15,7 @@ results = {
     } for phantom in phantoms
 }
 final_results = {
-    phantom: { lambda_val: {{"rnmp": [], "ssim": []} } for lambda_val in lambdas
+    phantom: { lambda_val: {{"rnmp": 0, "ssim": 0} } for lambda_val in lambdas
     } for phantom in phantoms
 }
 

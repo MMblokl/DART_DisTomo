@@ -37,7 +37,7 @@ def gen_blob(
     if not isdir(source_dir):
         makedirs(source_dir)
 
-    for _ in range(quant):
+    for q in range(quant):
         # Create empty image
         img = np.zeros([resolution, resolution])
         # Create initial background shape comprising of dark ellipses.
@@ -121,7 +121,7 @@ def gen_mesh(seed: int,
     if not isdir(source_dir):
         makedirs(source_dir)
 
-    for _ in range(quant):
+    for q in range(quant):
         img = np.zeros([resolution, resolution])
 
         # Generate n random points to use for the voronoi.
@@ -199,7 +199,7 @@ def gen_bone(
     if not isdir(source_dir):
         makedirs(source_dir)
     
-    for _ in range(quant):
+    for q in range(quant):
         # Definine image.
         img = np.zeros((resolution, resolution), dtype=np.float32)
 

@@ -8,7 +8,6 @@ import json
 
 ps = [0.1, 0.2, 0.4, 0.8]
 phantoms = ["blob", "bone", "mesh"]
-detector_numbers = [512, 128, 64]
 
 # Test DART
 results = {
