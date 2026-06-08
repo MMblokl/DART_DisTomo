@@ -28,7 +28,7 @@ except (IndexError, ValueError):
     seed = 202667
 print(f"Running with noisy: {noisy} and seed: {seed}")
 
-np.random.seed = seed
+np.random.seed(seed)
 
 final_results = {
         "blob": {
