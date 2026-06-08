@@ -6,6 +6,7 @@ from scipy.sparse.linalg import lsqr, LinearOperator
 from copy import copy
 from source.sinograms.create_sinogram import create_sinogram
 from source.utils import rescale, saveimg
+from source.metrics import calc_rnmp, calc_ssim
 
 class SDART():
     def __init__(
@@ -13,17 +14,23 @@ class SDART():
             proj_geom,
             sinogram,
             img_shape,
-            sirt_iterations,
+            reconstruction_iterations,
             lambda_hp,
+            supersampling_a=None,
         ):
-        self.sirt_iterations = sirt_iterations
+        self.reconstruction_iterations = reconstruction_iterations
         self.img_shape = img_shape
         self.lambda_hp = lambda_hp
+        self.supersampling_a = supersampling_a
 
         # Create volume geometry.
         self.proj_geom = proj_geom
         self.vol_geom = astra.create_vol_geom(img_shape)
-        self.projector_id = astra.create_projector('cuda', proj_geom, self.vol_geom)
+        if self.supersampling_a:
+            self.projector_id = astra.create_projector('cuda', self.proj_geom, self.vol_geom, options={"DetectorSuperSampling": supersampling_a})
+        else:
+            self.projector_id = astra.create_projector('cuda', self.proj_geom, self.vol_geom)
+
 
         # Save sinogram into a data2d object
         self.sinogram = sinogram
@@ -71,21 +78,6 @@ class SDART():
 
         return output
 
-
-    def free_pixels(self):
-        """Samples random locations based on image shape where free_pixels will be located.
-        
-        Args:
-            None
-        
-        Returns:
-            np.ndarray of shape self.img_shape with a number of True according 1-self.p, with the rest False.
-        """
-        # We sample a random number of free pixels according to self.p
-        # p - (1 - p) chance to be or not to be included from boundary pixels
-        output = np.random.choice([False,True], self.img_shape, p=[self.p, 1-self.p])
-
-        return output
 
     def lsqr_recon(self, B, W, v):
         """Reconstruction using B, W and v with a least squares problem solver.
@@ -137,8 +129,8 @@ class SDART():
         )
 
         # Use lsqr with the same number of iterations as SIRT for DART.
-        reconstruction = lsqr(A, right, iter_lim=self.sirt_iterations)[0]
-        reconstruction = reconstruction.reshape(512,512)
+        reconstruction = lsqr(A, right, iter_lim=self.reconstruction_iterations)[0]
+        reconstruction = reconstruction.reshape(self.img_shape)
         
         # Rescale to 255
         reconstruction = rescale(reconstruction)
@@ -197,14 +189,13 @@ class SDART():
             
             # Fill segmented areas into ouput with gray values for that specific threshold
             output_img[segmentation] = gray_intensities[i]
-        
+
         return output_img
 
 
     def reconstruct(
             self,
             reconstruction: np.ndarray | None = None,
-            free_pixels: np.ndarray | None = None,
         ):
         """ Create a SIRT reconstruction for the given input image, free_pixel mask.
         If free_pixels is None, then an initial reconstruction from the sinogram in self.sino is
@@ -219,56 +210,34 @@ class SDART():
 
         config = astra.astra_dict("SIRT_CUDA")
         config["option"] = {}
-        
-        # None if this is the first initial reconstruction
-        if free_pixels is not None:
-            # Create free_pixels dataid
-            free_pix_idx = np.where(free_pixels != 0)
-            rec = copy(reconstruction)
-            
-            # Remove the free pixels from the sinogram
-            rec[free_pix_idx] = 0
-            
-            # Create sino from free pixels
-            _, fixed_sinogram = astra.create_sino(rec, self.projector_id)
-            
-            # Free pixel sinogram is the difference between fixed and main sinogram
-            free_pixel_sinogram = self.sinogram - fixed_sinogram
-
-            # Create a data2d object for use in the algorithm
-            free_pixel_sinogram_id = astra.data2d.create("-sino", self.proj_geom, data=free_pixel_sinogram)
-            reconstruction_id = astra.data2d.create("-vol", self.vol_geom, data=rec)
-
-            # Put the free pixel sinogram into config
-            config["ProjectionDataId"] = free_pixel_sinogram_id
-
-            # Put the free pixels as a reconstructionmask into the algorithm
-            free_pixels_id = astra.data2d.create("-vol", self.vol_geom, data=free_pixels)
-            config["option"] = {"ReconstructionMaskId": free_pixels_id}
-        else:
-            # If there is no free_pixel_mask given, we make a blank image from the vol_geom
-            reconstruction_id = astra.data2d.create("-vol", self.vol_geom, data=0.0)
-            config["ProjectionDataId"] = self.sino_id
+    
+        # If there is no free_pixel_mask given, we make a blank image from the vol_geom
+        reconstruction_id = astra.data2d.create("-vol", self.vol_geom, data=0.0)
+        config["ProjectionDataId"] = self.sino_id
+        if self.supersampling_a:
+            config["option"].update({"DetectorSuperSampling": self.supersampling_a})
 
         config["ReconstructionDataId"] = reconstruction_id
         config["option"].update({'MinConstraint': 0.0, 'MaxConstraint': 255.0})
         
         # Run the algorithm
         alg_id = astra.algorithm.create(config=config)
-        astra.algorithm.run(alg_id, iterations=self.sirt_iterations)
+        astra.algorithm.run(alg_id, iterations=self.reconstruction_iterations)
 
         # Retrieve reconstruction
         reconstruction = astra.data2d.get(reconstruction_id)
+        
+        # Cleanup
         astra.algorithm.delete(alg_id)
+        astra.data2d.delete(reconstruction_id)
         
         return reconstruction
     
 
-    def run(self, p: int, gray_intensities: list, iterations: int):
+    def run(self, gray_intensities: list, iterations: int):
         """Run the DART algorithm according to the initializated values.
         
         Args:
-            p (integer): Probability of sampling a pixel as a fixed pixel.
             gray_intensities (list | tuple): List of prior gray intensity levels.
             iterations (integer): Number of DART iterations.
         
@@ -276,7 +245,6 @@ class SDART():
             Output image after DART reconstruction with set settings.
         """
         
-        self.p = p
         # Define thresholds for pre-defined gray values
         thresholds = self.gray_thresholds(gray_intensities)
 
@@ -287,7 +255,7 @@ class SDART():
         segmentation = self.segment(inp=reconstruction, thresholds=thresholds, gray_intensities=gray_intensities)
 
         # Iteration loop
-        for i in range(iterations):
+        for _ in range(iterations):
             # Segmentation of current reconstruction
             v = segmentation
 
@@ -303,15 +271,38 @@ class SDART():
             # Segment again
             segmentation = self.segment(inp=reconstruction, thresholds=thresholds, gray_intensities=gray_intensities)
 
+        # Cleanup
+        astra.data2d.delete(self.sino_id)
+        astra.projector.delete(self.projector_id)
+
         return segmentation
 
 
 if __name__ == "__main__":
-    img = Image.open("./phantoms/blobs/blob_0.png")
+    img = Image.open("./phantoms/meshes/mesh_0.png")
     img = np.asarray(img)
     
-    proj_geom, sino = create_sinogram(img, 512, 32)
+    proj_geom, sino = create_sinogram(img, 64, 180)
 
-    sdart = SDART(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, sirt_iterations=25, lambda_hp=0.24)
-    reconstructed_image = sdart.run(0.4, [0,120,255], 100)
-    saveimg(reconstructed_image, "./yuh.png")
+    sdart1 = SDART(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, reconstruction_iterations=10, lambda_hp=0.24, supersampling_a=1)
+    sdart4 = SDART(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, reconstruction_iterations=10, lambda_hp=0.24, supersampling_a=4)
+    sdart8 = SDART(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, reconstruction_iterations=10, lambda_hp=0.24, supersampling_a=8)
+    sdart16 = SDART(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, reconstruction_iterations=10, lambda_hp=0.24, supersampling_a=16)
+
+    reconstructed_image_1 = sdart1.run([0, 255], 100)
+    reconstructed_image_4 = sdart4.run([0, 255], 100)
+    reconstructed_image_8 = sdart8.run([0, 255], 100)
+    reconstructed_image_16 = sdart16.run([0, 255], 100)
+
+    saveimg(reconstructed_image_1, "./sdart1.png")
+    saveimg(reconstructed_image_4, "./sdart4.png")
+    saveimg(reconstructed_image_8, "./sdart8.png")
+    saveimg(reconstructed_image_16, "./sdart16.png")
+
+    print("RNMP, SSIM")
+    print(calc_rnmp(img, reconstructed_image_1), calc_ssim(img, reconstructed_image_1))
+    print(calc_rnmp(img, reconstructed_image_4), calc_ssim(img, reconstructed_image_4))
+    print(calc_rnmp(img, reconstructed_image_8), calc_ssim(img, reconstructed_image_8))
+    print(calc_rnmp(img, reconstructed_image_16), calc_ssim(img, reconstructed_image_16))
+
+

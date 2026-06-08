@@ -4,7 +4,8 @@ from PIL import Image
 from scipy.ndimage import gaussian_filter
 from copy import copy
 from source.sinograms.create_sinogram import create_sinogram
-from source.sinograms.sinograms import saveimg
+from source.utils import saveimg
+from source.metrics import calc_rnmp, calc_ssim
 
 class DART():
     def __init__(
@@ -12,15 +13,20 @@ class DART():
             proj_geom,
             sinogram,
             img_shape,
-            sirt_iterations,
+            reconstruction_iterations,
+            supersampling_a = None,
         ):
-        self.sirt_iterations = sirt_iterations
+        self.reconstruction_iterations = reconstruction_iterations
+        self.supersampling_a = supersampling_a
         self.img_shape = img_shape
 
         # Create volume geometry.
         self.proj_geom = proj_geom
         self.vol_geom = astra.create_vol_geom(img_shape)
-        self.projector_id = astra.create_projector('cuda', proj_geom, self.vol_geom)
+        if self.supersampling_a:
+            self.projector_id = astra.create_projector('cuda', self.proj_geom, self.vol_geom, options={"DetectorSuperSampling": supersampling_a})
+        else:
+            self.projector_id = astra.create_projector('cuda', self.proj_geom, self.vol_geom)
 
         # Save sinogram into a data2d object
         self.sinogram = sinogram
@@ -189,18 +195,26 @@ class DART():
             # If there is no free_pixel_mask given, we make a blank image from the vol_geom
             reconstruction_id = astra.data2d.create("-vol", self.vol_geom, data=0.0)
             config["ProjectionDataId"] = self.sino_id
+        if self.supersampling_a:
+            config["option"].update({"DetectorSuperSampling": self.supersampling_a})
 
         config["ReconstructionDataId"] = reconstruction_id
         config["option"].update({'MinConstraint': 0.0, 'MaxConstraint': 255.0})
         
         # Run the algorithm
         alg_id = astra.algorithm.create(config=config)
-        astra.algorithm.run(alg_id, iterations=self.sirt_iterations)
+        astra.algorithm.run(alg_id, iterations=self.reconstruction_iterations)
 
         # Retrieve reconstruction
         reconstruction = astra.data2d.get(reconstruction_id)
-        astra.algorithm.delete(alg_id)
         
+        # Cleanup
+        astra.algorithm.delete(alg_id)
+        astra.data2d.delete(reconstruction_id)
+        if free_pixels is not None:
+            astra.data2d.delete(free_pixel_sinogram_id)
+            astra.data2d.delete(free_pixels_id)
+
         return reconstruction
     
 
@@ -252,17 +266,25 @@ class DART():
             # Smoothing
             if i != iterations:
                 smoothed_recon = self.smoothing(reconstruction)
-                reconstruction[free_pixels[0], free_pixels[1]] = smoothed_recon[free_pixels[0], free_pixels[1]]
+                reconstruction[free_pixels] = smoothed_recon[free_pixels]
+        
+        # Cleanup
+        astra.data2d.delete(self.sino_id)
+        astra.projector.delete(self.projector_id)
         
         return segmentation
 
 
 if __name__ == "__main__":
-    img = Image.open("./blobs/blob_0.png")
+    img = Image.open("./phantoms/meshes/mesh_0.png")
     img = np.asarray(img)
     
-    proj_geom, sino = create_sinogram(img, 512, 32)
+    proj_geom, sino = create_sinogram(img=img, n_detectors=64, n_projections=180, supersampling_a=8)
 
-    dart = DART(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, sirt_iterations=25)
-    reconstructed_image = dart.run(0.4, [0,120,255], 100)
-    saveimg(reconstructed_image, "./yuh.png")
+    dart = DART(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, reconstruction_iterations=50, supersampling_a=8)
+    reconstructed_image = dart.run(p=0.4, gray_intensities=[0,255], iterations=100)
+
+    print("RNMP, SSIM")
+    print(calc_rnmp(img, reconstructed_image), calc_ssim(img, reconstructed_image))
+
+    saveimg(reconstructed_image, "./super4.png")

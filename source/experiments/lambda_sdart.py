@@ -1,0 +1,67 @@
+from source.algorithms.SDART import SDART
+from source.sinograms.create_sinogram import create_sinogram
+from source.metrics import calc_rnmp, calc_ssim
+from PIL import Image
+import numpy as np
+import glob
+import json
+
+lambdas = [0.1, 0.24, 0.48, 0.8]
+phantoms = ["blob", "bone", "mesh"]
+
+# Test SDART
+results = {
+    phantom: { lambda_val: {{"rnmp": [], "ssim": []} } for lambda_val in lambdas
+    } for phantom in phantoms
+}
+final_results = {
+    phantom: { lambda_val: {{"rnmp": [], "ssim": []} } for lambda_val in lambdas
+    } for phantom in phantoms
+}
+
+for phantom_group in glob.glob("./phantoms/*"):
+    for phantom in glob.glob(f"{phantom_group}/*.png"):
+        if "blob" in phantom:
+            grey_intensities = [0,120,255]
+            p_group = "blob"
+        elif "bone" in phantom:
+            grey_intensities = [0, 110, 150, 220]
+            p_group = "bone"
+        else:
+            grey_intensities = [0,255]
+            p_group = "mesh"
+        img = Image.open(phantom)
+        img = np.asarray(img)
+
+        for lambda_val in lambdas:
+            proj_geom, sino = create_sinogram(img, 64, 180)
+
+            sdart = SDART(
+                proj_geom=proj_geom,
+                sinogram=sino,
+                img_shape=img.shape,
+                supersampling_a=1,
+                reconstruction_iterations=100,
+                lambda_hp=lambda_val
+            )
+        
+            rec_img = sdart.run(gray_intensities=grey_intensities, iterations=100)
+
+            rnmp = calc_rnmp(img, rec_img)
+            ssim = calc_ssim(img, rec_img)
+
+            results[p_group][lambda_val]["rnmp"].append(rnmp)
+            results[p_group][lambda_val]["ssim"].append(ssim)
+    
+        print(f"Finished with phantom {phantom}.")
+    print(f"Finished with phantom family {phantom_group}.")
+
+
+for phantom_group in results.keys():
+    for p_val in results[phantom_group].keys():
+        final_results[phantom_group][p_val]["rnmp"] = np.mean(results[phantom_group][p_val]["rnmp"])
+        final_results[phantom_group][p_val]["ssim"] = np.mean(results[phantom_group][p_val]["ssim"])
+
+
+with open("lambda_results.json", "w") as f:
+    json.dump(final_results, f)
