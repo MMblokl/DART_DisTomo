@@ -72,10 +72,8 @@ class SDART():
         Returns:
             Smoothed input image.
         """
-        # Gaussian also works
-        output = gaussian_filter(inp, sigma=1)
+        return gaussian_filter(inp, sigma=1)
 
-        return output
 
 
     def lsqr_recon(self, B, W, v):
@@ -92,7 +90,7 @@ class SDART():
         d = 100 / (3 ** B.ravel())
         m, n = W.shape
 
-        # This is the A*x part
+        # This is A*x
         def matvec(x):
             return np.concatenate(
                 [
@@ -101,7 +99,7 @@ class SDART():
                 ]
             )
         
-        # The A'*b part
+        # The transposed A'*x
         def rmatvec(b):
             b1 = b[:m]
             b2 = b[m:]
@@ -172,7 +170,7 @@ class SDART():
 
         Args:
             inp (np.ndarray): Input image.
-            threshold (list | tuple): Array of thresholds for each gray level value.
+            thresholds (list | tuple): Array of thresholds for each gray level value.
             gray_intensities (list | tuple):  Array of prior gray levels defined by the user for each threshold.
         
         Returns:
@@ -192,31 +190,27 @@ class SDART():
         return output_img
 
 
-    def reconstruct(
-            self,
-            reconstruction: np.ndarray | None = None,
-        ):
-        """ Create a SIRT reconstruction for the given input image, free_pixel mask.
-        If free_pixels is None, then an initial reconstruction from the sinogram in self.sino is
-        taken with an empty prior reconstruction.
-        
-        Args:
-            reconstruction (np.ndarray | None): Prior reconstructed input image.
-            free_pixels (np.ndarray | None): Input mask for each free pixel in the input
+    def reconstruct(self):
+        """ Create a SIRT reconstruction as the initial reconstruction to kickstart SDART.
+
+        Returns:
+            numpy.ndarray of initial reconstruction.
         """
 
         # Create the SIRT config
-
         config = astra.astra_dict("SIRT_CUDA")
         config["option"] = {}
-    
-        # If there is no free_pixel_mask given, we make a blank image from the vol_geom
+
+        # Create ID to save reconstruction in
         reconstruction_id = astra.data2d.create("-vol", self.vol_geom, data=0.0)
         config["ProjectionDataId"] = self.sino_id
+        config["ReconstructionDataId"] = reconstruction_id
+
+        # Add supersampling to config if active.
         if self.supersampling_a:
             config["option"].update({"DetectorSuperSampling": self.supersampling_a})
-
-        config["ReconstructionDataId"] = reconstruction_id
+        
+        # Upper and lower bound of pixel intensities.
         config["option"].update({'MinConstraint': 0.0, 'MaxConstraint': 255.0})
         
         # Run the algorithm

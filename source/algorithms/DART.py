@@ -69,10 +69,7 @@ class DART():
         Returns:
             Smoothed input image.
         """
-
-        output = gaussian_filter(inp, sigma=1)
-
-        return output
+        return gaussian_filter(inp, sigma=1)
 
 
     def free_pixels(self):
