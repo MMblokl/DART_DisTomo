@@ -4,8 +4,7 @@ from PIL import Image
 from scipy.ndimage import gaussian_filter
 from scipy.sparse.linalg import lsqr, LinearOperator
 from copy import copy
-from source.sinograms.create_sinogram import create_sinogram
-from source.utils import rescale, saveimg
+from source.utils import rescale, saveimg, create_sinogram
 from source.metrics import calc_rnmp, calc_ssim
 
 class SDART():

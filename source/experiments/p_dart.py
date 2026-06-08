@@ -1,5 +1,5 @@
 from source.algorithms.DART import DART
-from source.sinograms.create_sinogram import create_sinogram
+from source.utils import create_sinogram
 from source.metrics import calc_rnmp, calc_ssim
 from PIL import Image
 import numpy as np

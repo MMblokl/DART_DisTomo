@@ -1,7 +1,16 @@
 from source.phantoms.phantom_generators import gen_blob, gen_bone, gen_mesh
 
-def generate_phantoms(seed: int = 202667, quantity: int = 5, save_location: str = "./phantoms", resolution: int = 512):
-    """Generates all phantoms based on inputs."""
+# Single script for the creation of the phantoms used in the experimentation report.
+
+def generate_phantoms(seed: int = 202667, quantity: int = 20, save_location: str = "./phantoms", resolution: int = 512):
+    """Generates all phantoms based on inputs.
+    
+    Args:
+        seed (integer): Random seed for generation.
+        quantity (integer): Number of phantoms for each group.
+        save_location (string): Save location for saving each phantom group.
+        resolution (integer): Cubic resolution of the output phantoms.
+    """
     gen_blob(seed, quantity, f"{save_location}/blobs/", resolution, 25, 75, 60, 10)
     gen_mesh(seed, quantity, f"{save_location}/meshes/", resolution, 100, 40)
     gen_bone(seed, quantity, f"{save_location}/bones/", resolution, 120, 60, 40, 80, 150, 220, 110)

@@ -9,186 +9,252 @@ from skimage import draw, morphology
 from source.utils import saveimg
 
 # Define random seed for numpy as random module
-random.seed(167)
-np.random.seed(167)
+def gen_blob(
+        seed: int,
+        quant: int,
+        source_dir: str,
+        resolution: int,
+        shape_var: int,
+        margin: int,
+        background_amt: int,
+        foreground_amt: int,
+    ):
+    """Creates the 'blob' phantom family.
 
-def gen_blob(seed, quant, source_dir, resolution, shape_var, margin, background_amt, foreground_amt):
-  random.seed(seed)
-  np.random.seed(seed)
-  if not isdir(source_dir):
-    makedirs(source_dir)
-  for q in range(quant):
-    # Create empty image
-    img = np.zeros([resolution, resolution])
-    # Create initial background shape comprising of dark ellipses.
-    for i in range(background_amt):
-      # 50-50 chance to place a circle, otherwise an ellipse.
-      match random.randint(0,1):
-        case 0:  # Draw ellipse within margin of empty space
-          rr, cc = draw.ellipse(random.randint(margin,resolution - margin), # Random location within margin
-                                random.randint(margin,resolution - margin),
-                                shape_var+random.randint(0, shape_var), # Random shape from (0, shape_var)
-                                shape_var+random.randint(0, shape_var),
-                                rotation=random.randint(0,360), # Random 0-360 degree rotation
+    Args:
+        seed (integer): Numeric random seed.
+        quant (integer): Number of phantoms to generate.
+        source_dir (str): Location to save each blob phantom in.
+        resolution (integer): Cubic phantom resolution.
+        shape_var (integer): Numberic variation in the size of circles and ellipses.
+        margin (integer): Margin between shape elements, e.g. the border and inner/outer elements.
+        backgroun_amt (integer): Number of background shapes.
+        foreground_amt (integer): Number of foreground shapes.
+    """
+    random.seed(seed)
+    np.random.seed(seed)
+
+    if not isdir(source_dir):
+        makedirs(source_dir)
+
+    for _ in range(quant):
+        # Create empty image
+        img = np.zeros([resolution, resolution])
+        # Create initial background shape comprising of dark ellipses.
+        for i in range(background_amt):
+            # 50-50 chance to place a circle, otherwise an ellipse.
+            match random.randint(0,1):
+                case 0:   # Draw ellipse within margin of empty space
+                    rr, cc = draw.ellipse(random.randint(margin,resolution - margin), # Random location within margin
+                                                                random.randint(margin,resolution - margin),
+                                                                shape_var+random.randint(0, shape_var), # Random shape from (0, shape_var)
+                                                                shape_var+random.randint(0, shape_var),
+                                                                rotation=random.randint(0,360), # Random 0-360 degree rotation
+                                                                shape=img.shape
+                                                                )
+                case _: # Draw circle
+                    rr, cc = draw.disk(
+                            (random.randint(margin,resolution - margin),
+                            random.randint(margin,resolution - margin)), # Random location within margin
+                            shape_var+random.randint(0, shape_var), # Random width of circle according to shape_var
+                            shape=img.shape
+                            )
+
+            # Background images have half intensity
+            img[rr, cc] = 120
+
+        # Morphological closing operation to make background shape a bit more filled out
+        morphology.closing(img, footprint=morphology.disk(7), out=img)
+
+        # Add *foreground_amt* random circles or ellispes in the foreground, within a much smaller margin, which is 1.8 times the *margin* variable.
+        margin_new = int(margin*1.8) # Reduce the margin to be within the original
+
+        # Same code as before, using *foreground_amt* and full intensity
+        for i in range(foreground_amt):
+            match random.randint(0,1):
+                case 0: # Draw ellipse
+                    rr, cc = draw.ellipse(random.randint(margin_new,resolution - margin_new),
+                                                                random.randint(margin_new,resolution - margin_new),
+                                                                shape_var+random.randint(0, shape_var),
+                                                                shape_var+random.randint(0, shape_var),
+                                                                rotation=random.randint(0,360),
+                                                                shape=img.shape
+                                                                )
+                case _: # Draw circle
+                    rr, cc = draw.disk(
+                            (random.randint(margin_new,resolution - margin_new),
+                            random.randint(margin_new,resolution - margin_new)),
+                            shape_var+random.randint(0, shape_var),
+                            shape=img.shape
+                            )
+            img[rr, cc] = 255
+
+        # Reshape image intensities to 0,255
+        img = np.clip(img, 0, 255).astype(np.uint8)
+
+        # Save to png
+        im = Image.fromarray(img)
+        im.save(f"{source_dir}/blob_{q}.png")
+
+
+def gen_mesh(seed: int,
+        quant: int,
+        source_dir: str,
+        resolution: int, 
+        n_points: int,
+        margin: int,
+    ):
+    """Create the 'mesh' phantom group.
+    
+    Args:
+        seed (integer): Numeric random seed.
+        quant (integer): Number of phantoms to generate.
+        source_dir (str): Location to save each blob phantom in.
+        resolution (integer): Cubic phantom resolution.
+        n_points (integer): Number of points to draw voronoi vertices from.
+        margin (integer): Margin from the image border to clip the voronoi vertices into.
+    """
+    random.seed(seed)
+    np.random.seed(seed)
+    
+    # Create
+    if not isdir(source_dir):
+        makedirs(source_dir)
+
+    for _ in range(quant):
+        img = np.zeros([resolution, resolution])
+
+        # Generate n random points to use for the voronoi.
+        x_positions = np.random.uniform(0, resolution, n_points)
+        y_positions = np.random.uniform(0, resolution, n_points)
+        points = np.column_stack((x_positions, y_positions)) # Stack into numpy ndarray
+
+        # Initial voronoi
+        v = Voronoi(points)
+
+        # Draw each vertex in the voronoi in the numpy image
+        for ridge in v.ridge_vertices:
+            if -1 in ridge: # Non-existant vertex, which is ignored. This happens as scipy generated voronois in inf spacing on the outer neighbourhoods.
+                continue
+            # Get vertex not in inf space
+            vertex = v.vertices[ridge]
+
+            # Get coordinates and clip to defined resolution, minus the margin
+            r0, c0 = vertex[0]
+            r1, c1 = vertex[1]
+            r0 = np.clip(r0, margin, resolution - margin)
+            c0 = np.clip(c0, margin, resolution - margin)
+            r1 = np.clip(r1, margin, resolution - margin)
+            c1 = np.clip(c1, margin, resolution - margin)
+
+            # Draw the line using the coordinates.
+            rr, cc = draw.line(int(r0), int(c0), int(r1), int(c1))
+            img[rr, cc] = 255
+
+
+        # Rescale to (0, 255)
+        img = np.clip(img, 0, 255).astype(np.uint8)
+
+        # Dilation to get rid of very small segments on clipped edges.
+        morphology.dilation(img, footprint=morphology.disk(7), out=img)
+
+        # Erosion to make the network more sponge-like, with thicker segments where the vertices connect.
+        morphology.erosion(img, footprint=morphology.star(3), out=img)
+        # Save to png
+        im = Image.fromarray(img)
+        im.save(f"{source_dir}/mesh_{q}.png")
+
+
+def gen_bone(
+        seed: int,
+        quant: int,
+        source_dir: str,
+        resolution: int,
+        margin: int,
+        shape_var: int,
+        n_outer: int,
+        n_core: int,
+        outer_intensity: int,
+        inner_intensity: int,
+        core_intensity: int,
+    ):
+    """Create the 'mesh' phantom group.
+    
+    Args:
+        seed (integer): Numeric random seed.
+        quant (integer): Number of phantoms to generate.
+        source_dir (str): Location to save each blob phantom in.
+        resolution (integer): Cubic phantom resolution.
+        margin (integer): Value indicating how much margin there is between groups of elements and the border.
+        shape_var (integer): Numberic variation in the size of circles and ellipses.
+        n_outer (integer): Number of outer shapes to draw outer shape from.
+        n_core (integer): Number of shapes for the inner core dots.
+        outer_intensity (integer): Gray-value intensity of the outer margin
+        inner_intensity (integer): Gray-value intensity of the inner margin
+        core_intensity (integer): Gray-value intensity of the inner core dots.
+    """
+    random.seed(seed)
+    np.random.seed(seed)
+
+    if not isdir(source_dir):
+        makedirs(source_dir)
+    
+    for _ in range(quant):
+        # Definine image.
+        img = np.zeros((resolution, resolution), dtype=np.float32)
+
+        # Create the outer region
+        mask_outer = np.zeros_like(img)
+        # Place n_outer random shapes to draw the region around.
+        for _ in range(n_outer):
+                r = random.randint(margin, resolution - margin)
+                c = random.randint(margin, resolution - margin)
+
+                # 50-50 to generate either an ellipse or a circle
+                if random.randint(0, 1) == 0:
+                        rr, cc = draw.ellipse(
+                                r, c,
+                                shape_var + random.randint(0, 40), # Random ellipse shape
+                                shape_var + random.randint(0, 40),
+                                rotation=np.deg2rad(random.randint(0, 180)),    # Random 180 degree rotation
                                 shape=img.shape
-                                )
-        case _: # Draw circle
-          rr, cc = draw.disk(
-              (random.randint(margin,resolution - margin),
-              random.randint(margin,resolution - margin)), # Random location within margin
-              shape_var+random.randint(0, shape_var), # Random width of circle according to shape_var
-              shape=img.shape
-              )
-
-      # Background images have half intensity
-      img[rr, cc] = 120
-
-    # Morphological closing operation to make background shape a bit more filled out
-    morphology.closing(img, footprint=morphology.disk(7), out=img)
-
-    # Add *foreground_amt* random circles or ellispes in the foreground, within a much smaller margin, which is 1.8 times the *margin* variable.
-    margin_new = int(margin*1.8) # Reduce the margin to be within the original
-
-    # Same code as before, using *foreground_amt* and full intensity
-    for i in range(foreground_amt):
-      match random.randint(0,1):
-        case 0: # Draw ellipse
-          rr, cc = draw.ellipse(random.randint(margin_new,resolution - margin_new),
-                                random.randint(margin_new,resolution - margin_new),
-                                shape_var+random.randint(0, shape_var),
-                                shape_var+random.randint(0, shape_var),
-                                rotation=random.randint(0,360),
+                        )
+                else:
+                        rr, cc = draw.disk(
+                                (r, c),
+                                shape_var + random.randint(0, 40), # Random circle diameter.
                                 shape=img.shape
-                                )
-        case _: # Draw circle
-          rr, cc = draw.disk(
-              (random.randint(margin_new,resolution - margin_new),
-              random.randint(margin_new,resolution - margin_new)),
-              shape_var+random.randint(0, shape_var),
-              shape=img.shape
-              )
-      img[rr, cc] = 255
+                        )
+                mask_outer[rr, cc] = 1
 
-    # Reshape image intensities to 0,255
-    img = np.clip(img, 0, 255).astype(np.uint8)
+        # Closing with a disk to fill out any holes in between randomly placed shaped
+        mask_outer = morphology.binary_closing(mask_outer, morphology.disk(15))
+        img[mask_outer] = outer_intensity # Fill drawn shapes with defined intensity
+        # Create the inner region of higher contrast withing the outer region
+        mask_inner = morphology.binary_erosion(mask_outer, morphology.disk(35)) # Binary erosion of a copy of the outer region.
+        img[mask_inner] = inner_intensity # Fill inner region with defined intensity
 
-    # Save to png
-    im = Image.fromarray(img)
-    im.save(f"{source_dir}/blob_{q}.png")
+        # Add spots as darker gray regions in the light background
+        core = np.zeros_like(img)
 
+        # add n_core random disks within the shape.
+        for _ in range(n_core):
+                r = random.randint(margin+20, resolution - margin-40) # Slightly decrease the margin to make sure none of the disks touch the border.
+                c = random.randint(margin+20, resolution - margin-40)
+                rr, cc = draw.disk(
+                        (r, c),
+                        random.randint(5, 15),
+                        shape=img.shape
+                )
+                core[rr, cc] = 1
 
-def gen_mesh(seed, quant, source_dir, resolution, n_points, margin):
-  random.seed(seed)
-  np.random.seed(seed)
-  if not isdir(source_dir):
-    makedirs(source_dir)
-  for q in range(quant):
-    img = np.zeros([resolution, resolution])
+        # Multiply the defined core shapes with the inner region binary mask with the core object binary mask to remove those outside this region.
+        core = core * mask_inner
+        img[core == 1] = core_intensity
 
-    # Generate n random points to use for the voronoi.
-    x_positions = np.random.uniform(0, resolution, n_points)
-    y_positions = np.random.uniform(0, resolution, n_points)
-    points = np.column_stack((x_positions, y_positions)) # Stack into numpy ndarray
+        # Reshape to 0,255
+        img = np.clip(img, 0, 255).astype(np.uint8)
 
-    # Initial voronoi
-    v = Voronoi(points)
-    vor = voronoi_plot_2d(v) # Create an actual 2d objects from the voronoi
-
-    # Draw each vertex in the voronoi in the numpy image
-    for ridge in v.ridge_vertices:
-      if -1 in ridge: # Non-existant vertex, which is ignored. This happens as scipy generated voronois in inf spacing on the outer neighbourhoods.
-        continue
-      # Get vertex not in inf space
-      vertex = v.vertices[ridge]
-
-      # Get coordinates and clip to defined resolution, minus the margin
-      r0, c0 = vertex[0]
-      r1, c1 = vertex[1]
-      r0 = np.clip(r0, margin, resolution - margin)
-      c0 = np.clip(c0, margin, resolution - margin)
-      r1 = np.clip(r1, margin, resolution - margin)
-      c1 = np.clip(c1, margin, resolution - margin)
-
-      # Draw the line using the coordinates.
-      rr, cc = draw.line(int(r0), int(c0), int(r1), int(c1))
-      img[rr, cc] = 255
-
-
-    # Rescale to (0, 255)
-    img = np.clip(img, 0, 255).astype(np.uint8)
-
-    # Dilation to get rid of very small segments on clipped edges.
-    morphology.dilation(img, footprint=morphology.disk(7), out=img)
-
-    # Erosion to make the network more sponge-like, with thicker segments where the vertices connect.
-    morphology.erosion(img, footprint=morphology.star(3), out=img)
-    # Save to png
-    im = Image.fromarray(img)
-    im.save(f"{source_dir}/mesh_{q}.png")
-
-
-def gen_bone(seed, quant, source_dir, resolution, margin, shape_var, n_outer, n_core, outer_intensity, inner_intensity, core_intensity):
-  random.seed(seed)
-  np.random.seed(seed)
-
-  if not isdir(source_dir):
-    makedirs(source_dir)
-  for q in range(quant):
-    # Definine image.
-    img = np.zeros((resolution, resolution), dtype=np.float32)
-
-    # Create the outer region
-    mask_outer = np.zeros_like(img)
-    # Place n_outer random shapes to draw the region around.
-    for _ in range(n_outer):
-        r = random.randint(margin, resolution - margin)
-        c = random.randint(margin, resolution - margin)
-
-        # 50-50 to generate either an ellipse or a circle
-        if random.randint(0, 1) == 0:
-            rr, cc = draw.ellipse(
-                r, c,
-                shape_var + random.randint(0, 40), # Random ellipse shape
-                shape_var + random.randint(0, 40),
-                rotation=np.deg2rad(random.randint(0, 180)),  # Random 180 degree rotation
-                shape=img.shape
-            )
-        else:
-            rr, cc = draw.disk(
-                (r, c),
-                shape_var + random.randint(0, 40), # Random circle diameter.
-                shape=img.shape
-            )
-        mask_outer[rr, cc] = 1
-
-    # Closing with a disk to fill out any holes in between randomly placed shaped
-    mask_outer = morphology.binary_closing(mask_outer, morphology.disk(15))
-    img[mask_outer] = outer_intensity # Fill drawn shapes with defined intensity
-    # Create the inner region of higher contrast withing the outer region
-    mask_inner = morphology.binary_erosion(mask_outer, morphology.disk(35)) # Binary erosion of a copy of the outer region.
-    img[mask_inner] = inner_intensity # Fill inner region with defined intensity
-
-    # Add spots as darker gray regions in the light background
-    core = np.zeros_like(img)
-
-    # add n_core random disks within the shape.
-    for _ in range(n_core):
-        r = random.randint(margin+20, resolution - margin-40) # Slightly decrease the margin to make sure none of the disks touch the border.
-        c = random.randint(margin+20, resolution - margin-40)
-        rr, cc = draw.disk(
-            (r, c),
-            random.randint(5, 15),
-            shape=img.shape
-        )
-        core[rr, cc] = 1
-
-    # Multiply the defined core shapes with the inner region binary mask with the core object binary mask to remove those outside this region.
-    core = core * mask_inner
-    img[core == 1] = core_intensity
-
-    # Reshape to 0,255
-    img = np.clip(img, 0, 255).astype(np.uint8)
-
-    # Save to png
-    im = Image.fromarray(img)
-    im.save(f"{source_dir}/bone_{q}.png")
+        # Save to png
+        im = Image.fromarray(img)
+        im.save(f"{source_dir}/bone_{q}.png")

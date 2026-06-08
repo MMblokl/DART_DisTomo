@@ -2,8 +2,7 @@ import astra
 import numpy as np
 from copy import copy
 from PIL import Image
-from source.sinograms.create_sinogram import create_sinogram
-from source.utils import saveimg
+from source.utils import saveimg, create_sinogram
 from source.metrics import calc_rnmp, calc_ssim
 
 class SSIRT:
