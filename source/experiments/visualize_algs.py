@@ -1,9 +1,8 @@
 from PIL import Image
 import numpy as np
 import os
-from source.sinograms.create_sinogram import create_sinogram
 from source.algorithms import SSIRT, SDART, DART
-from source.utils import saveimg
+from source.utils import saveimg, create_sinogram
 
 if not os.path.exists("./visuals/"):
     os.makedirs("./visuals/")

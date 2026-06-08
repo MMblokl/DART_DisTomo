@@ -1,5 +1,5 @@
 from source.algorithms.DART import DART
-from source.sinograms.create_sinogram import create_sinogram
+from source.utils import create_sinogram
 from source.metrics import calc_rnmp, calc_ssim
 from PIL import Image
 import numpy as np
@@ -8,9 +8,7 @@ import json
 
 ps = [0.1, 0.2, 0.4, 0.8]
 phantoms = ["blob", "bone", "mesh"]
-detector_numbers = [512, 128, 64]
 
-# Test DART
 results = {
     phantom: { p_val: {{"rnmp": [], "ssim": []} } for p_val in ps
     } for phantom in phantoms
@@ -22,6 +20,7 @@ final_results = {
 
 for phantom_group in glob.glob("./phantoms/*"):
     for phantom in glob.glob(f"{phantom_group}/*.png"):
+        # Selection of phantom grouping based on their intensity values.
         if "blob" in phantom:
             grey_intensities = [0,120,255]
             p_group = "blob"

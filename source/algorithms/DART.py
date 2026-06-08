@@ -3,8 +3,7 @@ import numpy as np
 from PIL import Image
 from scipy.ndimage import gaussian_filter
 from copy import copy
-from source.sinograms.create_sinogram import create_sinogram
-from source.utils import saveimg
+from source.utils import saveimg, create_sinogram
 from source.metrics import calc_rnmp, calc_ssim
 
 class DART():
@@ -37,7 +36,7 @@ class DART():
         """Border pixel returns, basically just an edge detection
         
         Args:
-            inp (np.ndarray): Input image as ndarray.
+            inp (:class:`numpy.ndarray`): Input image as ndarray.
 
         Returns:
             Boolean/binary image with True on edges/borders.
@@ -65,22 +64,16 @@ class DART():
         """Smoothing function for after a single reconstruction
         
         Args:
-            inp (np.ndarray): Input image
+            inp (:class:`numpy.ndarray`): Input image
         
         Returns:
             Smoothed input image.
         """
-        # Gaussian also works
-        output = gaussian_filter(inp, sigma=1)
-
-        return output
+        return gaussian_filter(inp, sigma=1)
 
 
     def free_pixels(self):
         """Samples random locations based on image shape where free_pixels will be located.
-        
-        Args:
-            None
         
         Returns:
             np.ndarray of shape self.img_shape with a number of True according 1-self.p, with the rest False.
@@ -96,10 +89,11 @@ class DART():
             self,
             gray_intensities: list | tuple,
         ) -> list:
-        """Define threshold array based on input gray_values.
+        """
+        Define threshold array based on input gray_values.
         Uses formula:
-        Tau_i = ( rho_i + rho_i+1 ) / 2
-        Where Tau is the threshold for gray value rho on position i in the array.
+        `Tau_i = ( rho_i + rho_i+1 ) / 2`
+        Where `Tau` is the threshold for `gray-value rho` on position `i` in the array.
         
         Args:
             gray_intensities (list | tuple or array_like): List of known gray levels in the image from low to high.
@@ -126,13 +120,13 @@ class DART():
         """ Creates a simple segmentation according to the thresholds given in thresholds.
 
         Args:
-            inp (np.ndarray): Input image.
-            threshold (list | tuple): Array of thresholds for each gray level value.
-            gray_intensities (list | tuple):  Array of prior gray levels defined by the user for each threshold.
+            inp (:class:`numpy.ndarray`): Input image.
+            threshold (`list` | `tuple`): Array of thresholds for each gray level value.
+            gray_intensities (`list` | `tuple`):  Array of prior gray levels defined by the user for each threshold.
         
         Returns:
             Segmented image where each pixel from in the input image is thresholded for
-            each threshold i in thresholds, and replaced by gray_intensities[i]if it is in
+            each threshold `i` in thresholds, and replaced by `gray_intensities[i]` if it is in
             between the current and next threshold.
         """
         output_img = np.zeros(inp.shape, dtype=np.uint8)
@@ -157,8 +151,11 @@ class DART():
         taken with an empty prior reconstruction.
         
         Args:
-            reconstruction (np.ndarray | None): Prior reconstructed input image.
-            free_pixels (np.ndarray | None): Input mask for each free pixel in the input
+            reconstruction (:class:`numpy.ndarray` | `None`): Prior reconstructed input image.
+            free_pixels (:class:`numpy.ndarray` | `None`): Input mask for each free pixel in the input
+        
+        Returns:
+            Reconstruction based on `free_pixels` and current `reconstruction`.
         """
 
         # Create the SIRT config
@@ -273,18 +270,3 @@ class DART():
         astra.projector.delete(self.projector_id)
         
         return segmentation
-
-
-if __name__ == "__main__":
-    img = Image.open("./phantoms/meshes/mesh_0.png")
-    img = np.asarray(img)
-    
-    proj_geom, sino = create_sinogram(img=img, n_detectors=64, n_projections=180, supersampling_a=8)
-
-    dart = DART(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, reconstruction_iterations=50, supersampling_a=8)
-    reconstructed_image = dart.run(p=0.4, gray_intensities=[0,255], iterations=100)
-
-    print("RNMP, SSIM")
-    print(calc_rnmp(img, reconstructed_image), calc_ssim(img, reconstructed_image))
-
-    saveimg(reconstructed_image, "./super4.png")

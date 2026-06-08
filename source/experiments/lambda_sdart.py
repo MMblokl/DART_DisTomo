@@ -1,6 +1,6 @@
 from source.algorithms.SDART import SDART
-from source.sinograms.create_sinogram import create_sinogram
 from source.metrics import calc_rnmp, calc_ssim
+from source.utils import create_sinogram
 from PIL import Image
 import numpy as np
 import glob
@@ -15,12 +15,14 @@ results = {
     } for phantom in phantoms
 }
 final_results = {
-    phantom: { lambda_val: {{"rnmp": [], "ssim": []} } for lambda_val in lambdas
+    phantom: { lambda_val: {{"rnmp": 0, "ssim": 0} } for lambda_val in lambdas
     } for phantom in phantoms
 }
 
+
 for phantom_group in glob.glob("./phantoms/*"):
     for phantom in glob.glob(f"{phantom_group}/*.png"):
+        # Selection of phantom grouping based on their intensity values.
         if "blob" in phantom:
             grey_intensities = [0,120,255]
             p_group = "blob"
@@ -44,7 +46,7 @@ for phantom_group in glob.glob("./phantoms/*"):
                 reconstruction_iterations=100,
                 lambda_hp=lambda_val
             )
-        
+
             rec_img = sdart.run(gray_intensities=grey_intensities, iterations=100)
 
             rnmp = calc_rnmp(img, rec_img)
@@ -56,12 +58,12 @@ for phantom_group in glob.glob("./phantoms/*"):
         print(f"Finished with phantom {phantom}.")
     print(f"Finished with phantom family {phantom_group}.")
 
-
+# Average values stored in dictionary
 for phantom_group in results.keys():
     for p_val in results[phantom_group].keys():
         final_results[phantom_group][p_val]["rnmp"] = np.mean(results[phantom_group][p_val]["rnmp"])
         final_results[phantom_group][p_val]["ssim"] = np.mean(results[phantom_group][p_val]["ssim"])
 
-
+# Save to json
 with open("lambda_results.json", "w") as f:
     json.dump(final_results, f)

@@ -1,6 +1,5 @@
 from source.algorithms import DART, SDART, SSIRT
-from source.sinograms.create_sinogram import create_sinogram
-from source.utils import saveimg
+from source.utils import create_sinogram
 from source.metrics import calc_rnmp, calc_ssim
 import glob
 from PIL import Image
