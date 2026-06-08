@@ -71,13 +71,8 @@ All experiment routines can be found in `./source/experiments/`, and have to be 
 
 ## Phantoms
 Here are some examples of what the phantoms will generally look like:
+These are in order: "blob", "bone" and "mesh" phantom.
 
-- "Blob" phantom:
-
-![Example "blob" phantom](source/assets/example_blob.png)
-- "Bone" phantom:
-
-![Example "bone" phantom](source/assets/example_bone.png)
-- "Mesh" phantom:
-
-![Example "mesh" phantom](source/assets/example_mesh.png)
+<img src="source/assets/example_blob.png" alt="Example 'blob' phantom" width="300"/>
+<img src="source/assets/example_bone.png" alt="Example 'bone' phantom" width="300"/>
+<img src="source/assets/example_mesh.png" alt="Example 'mesh' phantom" width="300"/>
