@@ -86,13 +86,13 @@ Here are some sample reconstructions of the example mesh phantom.
 <table>
   <caption>
     Average <strong>rNMP</strong> &amp; <strong>SSIM</strong> values for each phantom type
-    across different algorithms with different up-sampling settings.
+    across different algorithms with different up-sampling settings with DetectorSuperSampling values as <strong>a</strong>.
   </caption>
 
   <thead>
     <tr>
       <th rowspan="2">Phantom type</th>
-      <th rowspan="2">a value</th>
+      <th rowspan="2">a</th>
       <th colspan="3"><strong>rNMP</strong></th>
       <th colspan="3"><strong>SSIM</strong></th>
     </tr>
@@ -217,6 +217,166 @@ Here are some sample reconstructions of the example mesh phantom.
       <td>0.9627</td>
       <td>0.9688</td>
       <td>0.9885</td>
+    </tr>
+  </tbody>
+</table>
+<table>
+  <caption>
+    Average <strong>rNMP</strong> &amp; <strong>SSIM</strong> values for each phantom family for DART,
+    changing the <em>p</em> parameter that signifies the random chance a pixel is sampled as a free pixel
+    together with the entire border.
+  </caption>
+  <thead>
+    <tr>
+      <th>Phantom type</th>
+      <th>p-value</th>
+      <th>rNMP</th>
+      <th>SSIM</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td rowspan="4">Mesh</td>
+      <td>0.1</td>
+      <td>0.0664</td>
+      <td>0.7768</td>
+    </tr>
+    <tr>
+      <td>0.2</td>
+      <td>0.0591</td>
+      <td>0.7924</td>
+    </tr>
+    <tr>
+      <td>0.4</td>
+      <td><strong>0.0707</strong></td>
+      <td><strong>0.7685</strong></td>
+    </tr>
+    <tr>
+      <td>0.8</td>
+      <td>0.0806</td>
+      <td>0.7201</td>
+    </tr>
+    <tr>
+      <td rowspan="4">Bone</td>
+      <td>0.1</td>
+      <td>0.0961</td>
+      <td>0.8529</td>
+    </tr>
+    <tr>
+      <td>0.2</td>
+      <td>0.0949</td>
+      <td>0.8539</td>
+    </tr>
+    <tr>
+      <td>0.4</td>
+      <td><strong>0.0926</strong></td>
+      <td><strong>0.8549</strong></td>
+    </tr>
+    <tr>
+      <td>0.8</td>
+      <td>0.0893</td>
+      <td>0.8478</td>
+    </tr>
+    <tr>
+      <td rowspan="4">Blob</td>
+      <td>0.1</td>
+      <td>0.0106</td>
+      <td>0.9628</td>
+    </tr>
+    <tr>
+      <td>0.2</td>
+      <td>0.0102</td>
+      <td>0.9644</td>
+    </tr>
+    <tr>
+      <td>0.4</td>
+      <td><strong>0.0098</strong></td>
+      <td><strong>0.9655</strong></td>
+    </tr>
+    <tr>
+      <td>0.8</td>
+      <td>0.0168</td>
+      <td>0.9298</td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <caption>
+    Average <strong>rNMP</strong> &amp; <strong>SSIM</strong> values for each phantom family for the SDART recreation,
+    changing the value of the <em>&lambda;</em> smoothing parameter to see which one works about the best.
+  </caption>
+  <thead>
+    <tr>
+      <th>Phantom type</th>
+      <th>&lambda;</th>
+      <th>rNMP</th>
+      <th>SSIM</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td rowspan="4">Mesh</td>
+      <td>0.1</td>
+      <td><strong>0.0607</strong></td>
+      <td><strong>0.7664</strong></td>
+    </tr>
+    <tr>
+      <td>0.24</td>
+      <td>0.0699</td>
+      <td>0.7326</td>
+    </tr>
+    <tr>
+      <td>0.48</td>
+      <td>0.0756</td>
+      <td>0.7138</td>
+    </tr>
+    <tr>
+      <td>0.8</td>
+      <td>0.0693</td>
+      <td>0.7410</td>
+    </tr>
+    <tr>
+      <td rowspan="4">Bone</td>
+      <td>0.1</td>
+      <td><strong>0.0794</strong></td>
+      <td><strong>0.8635</strong></td>
+    </tr>
+    <tr>
+      <td>0.24</td>
+      <td>0.0817</td>
+      <td>0.8526</td>
+    </tr>
+    <tr>
+      <td>0.48</td>
+      <td>0.0846</td>
+      <td>0.8432</td>
+    </tr>
+    <tr>
+      <td>0.8</td>
+      <td>0.0821</td>
+      <td>0.8603</td>
+    </tr>
+    <tr>
+      <td rowspan="4">Blob</td>
+      <td>0.1</td>
+      <td><em>0.0126</em></td>
+      <td><em>0.9484</em></td>
+    </tr>
+    <tr>
+      <td>0.24</td>
+      <td>0.0178</td>
+      <td>0.9263</td>
+    </tr>
+    <tr>
+      <td>0.48</td>
+      <td>0.0224</td>
+      <td>0.9083</td>
+    </tr>
+    <tr>
+      <td>0.8</td>
+      <td><strong>0.0102</strong></td>
+      <td><strong>0.9613</strong></td>
     </tr>
   </tbody>
 </table>
