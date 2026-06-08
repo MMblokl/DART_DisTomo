@@ -37,7 +37,7 @@ for a_val in a_vals:
         sinogram=sino,
         img_shape=img.shape,
         supersampling_a=a_val,
-        lambda_hp=0.24,
+        lambda_hp=0.1,
         reconstruction_iterations=100,
     )
     ssirt_res = ssirt.run(gray_intensities=grey_intensities, iterations=100)
