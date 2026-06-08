@@ -73,13 +73,151 @@ These are in order: "blob", "bone" and "mesh" phantom.
 Here are some sample reconstructions of the example mesh phantom.
 
 #### S-SIRT with DetectorSuperSampling `1` and `4`:
-<img src="source/assets/ssirt_1.png" alt="S-SIRT 1" width="250"/>
-<img src="source/assets/ssirt_4.png" alt="S-SIRT 4" width="250"/>
+<img src="source/assets/ssirt_1.png" alt="S-SIRT 1" width="250"/> <img src="source/assets/ssirt_4.png" alt="S-SIRT 4" width="250"/>
 
 #### DART with DetectorSuperSampling `1` and `4`:
-<img src="source/assets/dart_1.png" alt="dart 1" width="250"/> 
-<img src="source/assets/dart_4.png" alt="dart 4" width="250"/> 
+<img src="source/assets/dart_1.png" alt="dart 1" width="250"/> <img src="source/assets/dart_4.png" alt="dart 4" width="250"/> 
 
 #### SDART with DetectorSuperSampling `1` and `4`:
-<img src="source/assets/sdart_1.png" alt="sdart 1" width="250"/> 
-<img src="source/assets/sdart_4.png" alt="sdart 4" width="250"/> 
+<img src="source/assets/sdart_1.png" alt="sdart 1" width="250"/> <img src="source/assets/sdart_4.png" alt="sdart 4" width="250"/>
+
+
+## Results
+<table>
+  <caption>
+    Average <strong>rNMP</strong> &amp; <strong>SSIM</strong> values for each phantom type
+    across different algorithms with different up-sampling settings.
+  </caption>
+
+  <thead>
+    <tr>
+      <th rowspan="2">Phantom type</th>
+      <th rowspan="2">a value</th>
+      <th colspan="3"><strong>rNMP</strong></th>
+      <th colspan="3"><strong>SSIM</strong></th>
+    </tr>
+    <tr>
+      <th>S-SIRT</th>
+      <th>DART</th>
+      <th>S-DART</th>
+      <th>S-SIRT</th>
+      <th>DART</th>
+      <th>S-DART</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr>
+      <td rowspan="4">Mesh</td>
+      <td>1</td>
+      <td>0.0762</td>
+      <td>0.0699</td>
+      <td>0.0699</td>
+      <td>0.7586</td>
+      <td>0.7699</td>
+      <td>0.7326</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>0.0668</td>
+      <td>0.0550</td>
+      <td>0.0086</td>
+      <td>0.7759</td>
+      <td>0.8029</td>
+      <td>0.9561</td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>0.0666</td>
+      <td>0.0547</td>
+      <td>0.0088</td>
+      <td>0.7763</td>
+      <td>0.8044</td>
+      <td>0.9548</td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td>0.0665</td>
+      <td>0.0547</td>
+      <td>0.0089</td>
+      <td>0.7764</td>
+      <td>0.8039</td>
+      <td>0.9541</td>
+    </tr>
+    <tr>
+      <td rowspan="4">Bone</td>
+      <td>1</td>
+      <td>0.0972</td>
+      <td>0.0925</td>
+      <td>0.0817</td>
+      <td>0.8521</td>
+      <td>0.8552</td>
+      <td>0.8526</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>0.0910</td>
+      <td>0.0842</td>
+      <td>0.0398</td>
+      <td>0.8594</td>
+      <td>0.8662</td>
+      <td>0.9195</td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>0.0908</td>
+      <td>0.0838</td>
+      <td>0.0382</td>
+      <td>0.8596</td>
+      <td>0.8669</td>
+      <td>0.9202</td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td>0.0908</td>
+      <td>0.0837</td>
+      <td>0.0380</td>
+      <td>0.8597</td>
+      <td>0.8669</td>
+      <td>0.9202</td>
+    </tr>
+
+    <tr>
+      <td rowspan="4">Blob</td>
+      <td>1</td>
+      <td>0.0111</td>
+      <td>0.0097</td>
+      <td>0.0178</td>
+      <td>0.9611</td>
+      <td>0.9657</td>
+      <td>0.9263</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>0.0104</td>
+      <td>0.0088</td>
+      <td>0.0034</td>
+      <td>0.9627</td>
+      <td>0.9688</td>
+      <td>0.9867</td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>0.0104</td>
+      <td>0.0087</td>
+      <td>0.0030</td>
+      <td>0.9628</td>
+      <td>0.9690</td>
+      <td>0.9883</td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td>0.0104</td>
+      <td>0.0087</td>
+      <td>0.0030</td>
+      <td>0.9627</td>
+      <td>0.9688</td>
+      <td>0.9885</td>
+    </tr>
+  </tbody>
+</table>
