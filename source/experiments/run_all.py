@@ -110,7 +110,7 @@ for phantom_group in glob.glob("./phantoms/*"):
                 sinogram=sino,
                 img_shape=img.shape,
                 supersampling_a=a_val,
-                lambda_hp=0.24,
+                lambda_hp=0.1,
                 reconstruction_iterations=100,
             )
 
