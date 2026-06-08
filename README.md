@@ -8,20 +8,14 @@ Install required packages through `python-venv` or `uv`. `uv` is easier to use s
 These instructions are for linux only, specifically debian.
 ### uv
 1. Install `uv`:
-- `curl -LsSf https://astral.sh/uv/install.sh | sh`
-- uv is also availble on PyPi, so `pipx` and `pip` also works:
-`pip install uv`
+    - `curl -LsSf https://astral.sh/uv/install.sh | sh`
+    - uv is also availble on PyPi, so `pipx` and `pip` also works: `pip install uv`
 2. Installing packages:
-- If you do not have any disk quotas, simply use:
-`uv sync`
-- If you DO have disk quotas, set a cache location for packages first:
-`export UV_CACHE_DIR=/etc/data_location_here/.cache/uv/`
+    - If you do not have any disk quotas, simply use: `uv sync`
+    - If you DO have disk quotas, set a cache location for packages first: `export UV_CACHE_DIR=/etc/data_location_here/.cache/uv/`
 3. Running python
-- Run scripts using:
-`uv run python <script.py>` or `uv run python -m source.<script>` for module packages.
-- Alternatively:
-`source .venv/bin/activate` followed by
-`python3 <script.py>` or `python3 -m source.<script>` for module packages.
+    - Run scripts using: `uv run python <script.py>` or `uv run python -m source.<script>` for module packages.
+    - Alternatively: `source .venv/bin/activate` followed by `python3 <script.py>` or `python3 -m source.<script>` for module packages.
 ### venv + pip
 1. Create a .venv:
 `python3 -m venv .venv`
@@ -74,3 +68,18 @@ Here are some examples of what the phantoms will generally look like:
 These are in order: "blob", "bone" and "mesh" phantom.
 
 <img src="source/assets/example_blob.png" alt="Example 'blob' phantom" width="250"/> <img src="source/assets/example_bone.png" alt="Example 'bone' phantom" width="250"/> <img src="source/assets/example_mesh.png" alt="Example 'mesh' phantom" width="250"/>
+
+## Sample reconstructions
+Here are some sample reconstructions of the example mesh phantom.
+
+#### S-SIRT with DetectorSuperSampling `1` and `4`:
+<img src="source/assets/ssirt_1.png" alt="S-SIRT 1" width="250"/>
+<img src="source/assets/ssirt_4.png" alt="S-SIRT 4" width="250"/>
+
+#### DART with DetectorSuperSampling `1` and `4`:
+<img src="source/assets/dart_1.png" alt="dart 1" width="250"/> 
+<img src="source/assets/dart_4.png" alt="dart 4" width="250"/> 
+
+#### SDART with DetectorSuperSampling `1` and `4`:
+<img src="source/assets/sdart_1.png" alt="sdart 1" width="250"/> 
+<img src="source/assets/sdart_4.png" alt="sdart 4" width="250"/> 
