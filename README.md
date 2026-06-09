@@ -401,7 +401,7 @@ Here are some sample reconstructions of the example mesh phantom.
     </tr>
     <tr>
       <td>0.4</td>
-      <td>0.0707/td>
+      <td>0.0707</td>
       <td>0.7685</td>
     </tr>
     <tr>
