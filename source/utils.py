@@ -12,7 +12,6 @@ def rescale(array):
         Array clipped to (0-255) grayscale values.
     """
     array[array < 0] = 0 # Remove any under zero values
-    #array = array/array.max() # Rescale to 0-1
     array = np.clip(array, 0, 255).astype(np.uint8) # Clip to 0,255 range
     
     return array
@@ -22,7 +21,7 @@ def saveimg(array: np.ndarray, name: str, type = None):
     """Saves ndarray as PIL image png.
 
     Args:
-        Array (np.ndarray): Input image
+        Array (numpy.ndarray): Input image
         Name (string): Location to save
     """
     array = array.astype(np.uint8)
@@ -35,8 +34,8 @@ def save_overlap(ground_truth: np.ndarray, recon: np.ndarray, name:str):
     Will likely only work with boolean or images with only 0 and 255 values.
 
     Args:
-        ground_truth (np.ndarray): Input image ground truth
-        recon (np.ndarray): Reconstruction of ground truth
+        ground_truth (numpy.ndarray): Input image ground truth
+        recon (numpy.ndarray): Reconstruction of ground truth
         Name (string): Location to save
     """
     rgb_image = np.zeros((ground_truth.shape[0], ground_truth.shape[0], 3), dtype=np.uint8)
@@ -122,14 +121,14 @@ def create_sinogram(
     between this resolution and the number of detectors isnt a full integer, this function will not work.
 
     Args:
-        img (:class:`numpy.ndarray`): Input image.
-        n_detectors (:class:`int`): Number of detector elements.
-        n_projections (:class:`int`): Number of projections to sample the image from.
-        supersampling_a (:class:`int`): DetectorSuperSampling option in the astra projector.
+        img (numpy.ndarray): Input image.
+        n_detectors (integer): Number of detector elements.
+        n_projections (integer): Number of projections to sample the image from.
+        supersampling_a (integer): DetectorSuperSampling option in the astra projector.
             Defaults to 1, and decides how many rays are projected per detector.
     Returns:
         Astra projection geometry of the image,
-        Sinogram as numpy array.
+        Sinogram as numpy ndarray.
     """
     # Put image into 2d data object
     vol_geom = astra.create_vol_geom(*img.shape) 
@@ -147,7 +146,7 @@ def create_sinogram(
     # Create the sinogram
     sino_id, sino = create_fp(data_id, proj_id, supersampling_a=supersampling_a)
 
-    # Clean up of data
+    # Data storage cleanup
     astra.data2d.delete([sino_id, data_id])
 
     return proj_geom, sino

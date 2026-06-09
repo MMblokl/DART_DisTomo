@@ -40,10 +40,10 @@ class SDART():
         """Calculation of matrix B which contains all neighbour difference values.
         
         Args:
-            inp (np.ndarray): Input image as ndarray.
+            inp (numpy.ndarray): Input image as ndarray.
 
         Returns:
-            int8 matrix for each pixel position
+            Numpy ndarray of the same shape as the input image with neighbour pixel counts at each pixel location.
         """        
         # Simple image padding to prevent index errors
         pad = np.pad(inp, 1, mode="edge")
@@ -67,7 +67,7 @@ class SDART():
         """Smoothing function for after a single reconstruction
         
         Args:
-            inp (np.ndarray): Input image
+            inp (numpy.ndarray): Input image numpy ndarray.
         
         Returns:
             Smoothed input image.
@@ -87,6 +87,7 @@ class SDART():
         Returns:
             reconstructed image based on inputs.
         """
+        # Calculation of the `D` matrix, kept as a single array to reduce memory impact.
         d = 100 / (3 ** B.ravel())
         m, n = W.shape
 
@@ -139,13 +140,12 @@ class SDART():
             self,
             gray_intensities: list | tuple,
         ) -> list:
-        """Define threshold array based on input gray_values.
-        Uses formula:
-        Tau_i = ( rho_i + rho_i+1 ) / 2
-        Where Tau is the threshold for gray value rho on position i in the array.
+        """Calculated gray-level intensity thresholds for segmentation based on the formula:
+        `Tau_i = ( rho_i + rho_i+1 ) / 2`
+        Where `Tau` is the threshold for `gray-value` `rho_i` on position `i` in the array.
         
         Args:
-            gray_intensities (list | tuple or array_like): List of known gray levels in the image from low to high.
+            gray_intensities (list | tuple): List of known gray levels in the image from low to high.
         
         Returns:
             List of gray value thresholds according to the formula.
@@ -169,13 +169,13 @@ class SDART():
         """ Creates a simple segmentation according to the thresholds given in thresholds.
 
         Args:
-            inp (np.ndarray): Input image.
-            thresholds (list | tuple): Array of thresholds for each gray level value.
+            inp (numpy.ndarray): Input image.
+            threshold (list | tuple): Array of thresholds for each gray level value.
             gray_intensities (list | tuple):  Array of prior gray levels defined by the user for each threshold.
         
         Returns:
             Segmented image where each pixel from in the input image is thresholded for
-            each threshold i in thresholds, and replaced by gray_intensities[i]if it is in
+            each threshold `i` in thresholds, and replaced by `gray_intensities[i]` if it is in
             between the current and next threshold.
         """
         output_img = np.zeros(inp.shape, dtype=np.uint8)
@@ -186,7 +186,7 @@ class SDART():
             
             # Fill segmented areas into ouput with gray values for that specific threshold
             output_img[segmentation] = gray_intensities[i]
-
+        
         return output_img
 
 
@@ -227,15 +227,15 @@ class SDART():
         return reconstruction
     
 
-    def run(self, gray_intensities: list, iterations: int):
-        """Run the DART algorithm according to the initializated values.
+    def run(self, gray_intensities: list, iterations: int) -> np.ndarray:
+        """Runs the SDART algorithm according to the initializated values.
         
         Args:
             gray_intensities (list | tuple): List of prior gray intensity levels.
-            iterations (integer): Number of DART iterations.
+            iterations (integer): Number of SDART iterations.
         
         Returns:
-            Output image after DART reconstruction with set settings.
+            Output image after SDART reconstruction with set settings.
         """
         
         # Define thresholds for pre-defined gray values
@@ -254,7 +254,6 @@ class SDART():
 
             # Determine Penalty for each pixel
             B = self.calculate_B(segmentation)
-            #D = self.calculate_D(B)
 
             # Calculate the W matrix
             W = astra.optomo.OpTomo(self.projector_id)
