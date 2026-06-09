@@ -3,6 +3,7 @@ import numpy as np
 import os
 from source.algorithms import SSIRT, SDART, DART
 from source.utils import saveimg, create_sinogram
+import astra
 
 if not os.path.exists("./visuals/"):
     os.makedirs("./visuals/")
@@ -15,6 +16,9 @@ phantom = "./phantoms/meshes/mesh_7.png"
 img = Image.open(phantom)
 img = np.asarray(img)
 proj_geom, sino = create_sinogram(img, 64, 180)
+saveimg(sino, f"./visuals/sinogram_clean.png")
+saveimg(astra.functions.add_noise_to_sino(sino, 1e5, seed=202667), "./visuals/sinogram_noisy.png")
+
 
 # For each supersampling a-value, save one image per alg.
 for a_val in a_vals:
@@ -46,3 +50,34 @@ for a_val in a_vals:
     saveimg(ssirt_res, f"./visuals/ssirt_{a_val}.png")
     saveimg(dart_res, f"./visuals/dart_{a_val}.png")
     saveimg(sdart_res, f"./visuals/sdart_{a_val}.png")
+
+# Noisy phantom visualization for bone phantoms
+phantom = "./phantoms/bones/bone_5.png"
+img = Image.open(phantom)
+img = np.asarray(img)
+proj_geom, sino = create_sinogram(img, 64, 180)
+sino = astra.functions.add_noise_to_sino(sino, 1e5, seed=202667)
+
+sdart_100 = SDART.SDART(
+    proj_geom=proj_geom,
+    sinogram=sino,
+    img_shape=img.shape,
+    supersampling_a=4,
+    lambda_hp=0.1,
+    reconstruction_iterations=100,
+)
+
+sdart_25 = SDART.SDART(
+    proj_geom=proj_geom,
+    sinogram=sino,
+    img_shape=img.shape,
+    supersampling_a=4,
+    lambda_hp=0.1,
+    reconstruction_iterations=25,
+)
+
+resdart_100 = sdart_100.run(gray_intensities=grey_intensities, iterations=100)
+resdart_25 = sdart_25.run(gray_intensities=grey_intensities, iterations=100)
+
+saveimg(resdart_100, f"./visuals/sdart_100iter4a.png")
+saveimg(resdart_25, f"./visuals/sdart_25iter4a.png")
