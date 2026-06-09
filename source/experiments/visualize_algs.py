@@ -3,6 +3,7 @@ import numpy as np
 import os
 from source.algorithms import SSIRT, SDART, DART
 from source.utils import saveimg, create_sinogram
+import astra
 
 if not os.path.exists("./visuals/"):
     os.makedirs("./visuals/")
@@ -15,6 +16,9 @@ phantom = "./phantoms/meshes/mesh_7.png"
 img = Image.open(phantom)
 img = np.asarray(img)
 proj_geom, sino = create_sinogram(img, 64, 180)
+saveimg(sino, f"./visuals/sinogram_clean.png")
+saveimg(astra.functions.add_noise_to_sino(sino, 1e5, seed=202667), "./visuals/sinogram_noisy.png")
+
 
 # For each supersampling a-value, save one image per alg.
 for a_val in a_vals:

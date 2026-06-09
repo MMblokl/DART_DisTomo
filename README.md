@@ -25,8 +25,8 @@ These instructions are for linux only, specifically debian.
     - If you do not have any disk quotas, simply use: `uv sync`
     - If you DO have disk quotas, set a cache location for packages first: `export UV_CACHE_DIR=/etc/data_location_here/.cache/uv/`
 3. Running python
-    - Run scripts using: `uv run python <script.py>` or `uv run python -m source.<script>` for module packages.
-    - Alternatively: `source .venv/bin/activate` followed by `python3 <script.py>` or `python3 -m source.<script>` for module packages.
+    - Run scripts using: `uv run python -m source.<script>` for module packages.
+    - Alternatively: `source .venv/bin/activate` followed by `python3 -m source.<script>` for module packages.
 ### venv + pip
 1. Create a .venv:
 `python3 -m venv .venv`
@@ -62,6 +62,11 @@ All experiment routines can be found in `./source/experiments/`, and have to be 
     - To run:
     `uv run python -m source.experiments.visualize_algs`
 
+- `./source/experiments/noisy_sdart.py` is a routine for quickly visualizing 2 reconstructions using SDART with added noise into the `./phantoms/bones/bone_5.png` phantoms. This shows that in the prescence of noise in the sinogram, having too many iterations for the internal lsqr actually has a negative effect for the reconstruction, especially if we apply DetectorSuperSampling.
+
+  - To run:
+  `uv run python -m source.experiments.noisy_sdart`
+
 - `./source/experiments/run_all.py` is the script for running the complete experiments for all phantom images present in the `./phantoms/` directory. It will go through four `a` parameters for DetectorSuperSampling, `1, 4, 8` and `16` and take the mean `rNMP` and `SSIM` for each phantom family/group for each algorithm seperately. The sinograms are sampled using `64` detector elements, with the DetectorSuperSampling option during the sinogram sampling set to the same value as the detector element spacing. In the case of our experiments, this was `8`, as this makes the detector the same width as the phantoms, which was `512`. The script can be given two commandline options to change whether random poisson noise will be added to the sinogram or not.
 
     - To run using the original sinograms:
@@ -92,6 +97,9 @@ Here are some sample reconstructions of the example mesh phantom.
 #### SDART with DetectorSuperSampling `1` and `4`:
 <img src="source/assets/sdart_1.png" alt="sdart 1" width="250"/> <img src="source/assets/sdart_4.png" alt="sdart 4" width="250"/>
 
+## Reconstruction showing off SDART overestimation with noisy bone phantom
+#### SDART with internal lsqr reconstruction iterations set to `25` and `100` under the effects of sinogram noise.
+<img src="source/assets/noisy_sdart_25iter4a.png" alt="SDART bone_5 25 iterations" width="250"/> <img src="source/assets/noisy_sdart_100iter4a.png" alt="DART bone_5 100 iterations" width="250"/>
 
 ## Results
 <table>

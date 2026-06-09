@@ -10,11 +10,11 @@ ps = [0.1, 0.2, 0.4, 0.8]
 phantoms = ["blob", "bone", "mesh"]
 
 results = {
-    phantom: { p_val: {{"rnmp": [], "ssim": []} } for p_val in ps
+    phantom: { p_val: {"rnmp": [], "ssim": []} for p_val in ps
     } for phantom in phantoms
 }
 final_results = {
-    phantom: { p_val: {{"rnmp": [], "ssim": []} } for p_val in ps
+    phantom: { p_val: {"rnmp": 0, "ssim": 0} for p_val in ps
     } for phantom in phantoms
 }
 
@@ -40,7 +40,7 @@ for phantom_group in glob.glob("./phantoms/*"):
                 proj_geom=proj_geom,
                 sinogram=sino,
                 img_shape=img.shape,
-                    upersampling_a=1,
+                supersampling_a=1,
                 reconstruction_iterations=100,
             )
             
