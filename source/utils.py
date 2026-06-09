@@ -18,7 +18,7 @@ def rescale(array):
     return array
 
 
-def saveimg(array: np.ndarray, name: str):
+def saveimg(array: np.ndarray, name: str, type = None):
     """Saves ndarray as PIL image png.
 
     Args:
@@ -28,6 +28,31 @@ def saveimg(array: np.ndarray, name: str):
     array = array.astype(np.uint8)
     array = Image.fromarray(array)
     array.save(name)
+
+
+def save_overlap(ground_truth: np.ndarray, recon: np.ndarray, name:str):
+    """Saves ndarray as PIL image png, Takes the overlap and saves it into different RGB channels.
+    Will likely only work with boolean or images with only 0 and 255 values.
+
+    Args:
+        ground_truth (np.ndarray): Input image ground truth
+        recon (np.ndarray): Reconstruction of ground truth
+        Name (string): Location to save
+    """
+    rgb_image = np.zeros((ground_truth.shape[0], ground_truth.shape[0], 3), dtype=np.uint8)
+    
+    # Get the overlap, and unique pixels to
+    only_gt = (ground_truth & ~recon) == 255
+    overlap = (ground_truth & recon) == 255
+    only_recon = (recon & ~ground_truth) == 255
+
+    # Save each channel
+    rgb_image[:,:, 0] = only_gt * 255
+    rgb_image[:,:, 1] = overlap * 255
+    rgb_image[:,:, 2] = only_recon * 255
+    
+    img = Image.fromarray(rgb_image, mode="RGB")
+    img.save(name)
 
 
 # Function taken from astra.creators.create_sino, added an option for supersampling for DetectorSuperSampling.
