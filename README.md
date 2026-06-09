@@ -396,13 +396,13 @@ Here are some sample reconstructions of the example mesh phantom.
     </tr>
     <tr>
       <td>0.2</td>
-      <td>0.0591</td>
-      <td>0.7924</td>
+      <td><strong>0.0591</strong></td>
+      <td><strong>0.7924</strong></td>
     </tr>
     <tr>
       <td>0.4</td>
-      <td><strong>0.0707</strong></td>
-      <td><strong>0.7685</strong></td>
+      <td>0.0707/td>
+      <td>0.7685</td>
     </tr>
     <tr>
       <td>0.8</td>
@@ -422,12 +422,12 @@ Here are some sample reconstructions of the example mesh phantom.
     </tr>
     <tr>
       <td>0.4</td>
-      <td><strong>0.0926</strong></td>
+      <td>0.0926</td>
       <td><strong>0.8549</strong></td>
     </tr>
     <tr>
       <td>0.8</td>
-      <td>0.0893</td>
+      <td><strong>0.0893</strong></td>
       <td>0.8478</td>
     </tr>
     <tr>
