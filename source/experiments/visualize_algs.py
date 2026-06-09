@@ -2,7 +2,7 @@ from PIL import Image
 import numpy as np
 import os
 from source.algorithms import SSIRT, SDART, DART
-from source.utils import saveimg, create_sinogram
+from source.utils import saveimg, create_sinogram,save_overlap
 import astra
 
 if not os.path.exists("./visuals/"):
@@ -46,7 +46,7 @@ for a_val in a_vals:
     ssirt_res = ssirt.run(gray_intensities=grey_intensities, iterations=100)
     dart_res = dart.run(p=0.4, gray_intensities=grey_intensities, iterations=100)
     sdart_res = sdart.run(gray_intensities=grey_intensities, iterations=100)
-
-    saveimg(ssirt_res, f"./visuals/ssirt_{a_val}.png")
-    saveimg(dart_res, f"./visuals/dart_{a_val}.png")
-    saveimg(sdart_res, f"./visuals/sdart_{a_val}.png")
+    
+    save_overlap(img, ssirt_res, f"./visuals/ssirt_{a_val}.png")
+    save_overlap(img, dart_res, f"./visuals/dart_{a_val}.png")
+    save_overlap(img, sdart_res, f"./visuals/sdart_{a_val}.png")
