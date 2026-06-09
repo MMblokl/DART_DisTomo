@@ -105,13 +105,12 @@ Here are some sample reconstructions of the example mesh phantom.
 <table>
   <caption>
     Average <strong>rNMP</strong> &amp; <strong>SSIM</strong> values for each phantom type
-    across different algorithms with different up-sampling settings with DetectorSuperSampling values as <strong>a</strong>.
+    across different algorithms with different up-sampling settings.
   </caption>
-
   <thead>
     <tr>
       <th rowspan="2">Phantom type</th>
-      <th rowspan="2">a</th>
+      <th rowspan="2">a value</th>
       <th colspan="3"><strong>rNMP</strong></th>
       <th colspan="3"><strong>SSIM</strong></th>
     </tr>
@@ -124,118 +123,253 @@ Here are some sample reconstructions of the example mesh phantom.
       <th>S-DART</th>
     </tr>
   </thead>
-
   <tbody>
     <tr>
       <td rowspan="4">Mesh</td>
       <td>1</td>
       <td>0.0762</td>
-      <td>0.0699</td>
-      <td>0.0699</td>
+      <td>0.0708</td>
+      <td>0.0607</td>
       <td>0.7586</td>
-      <td>0.7699</td>
-      <td>0.7326</td>
+      <td>0.7681</td>
+      <td>0.7664</td>
     </tr>
     <tr>
       <td>4</td>
       <td>0.0668</td>
       <td>0.0550</td>
-      <td>0.0086</td>
+      <td>0.0174</td>
       <td>0.7759</td>
-      <td>0.8029</td>
-      <td>0.9561</td>
+      <td>0.8034</td>
+      <td>0.9123</td>
     </tr>
     <tr>
       <td>8</td>
       <td>0.0666</td>
-      <td>0.0547</td>
-      <td>0.0088</td>
+      <td>0.0545</td>
+      <td>0.0159</td>
       <td>0.7763</td>
-      <td>0.8044</td>
-      <td>0.9548</td>
+      <td>0.8045</td>
+      <td>0.9198</td>
     </tr>
     <tr>
       <td>16</td>
       <td>0.0665</td>
-      <td>0.0547</td>
-      <td>0.0089</td>
+      <td>0.0546</td>
+      <td><strong>0.0157</strong></td>
       <td>0.7764</td>
-      <td>0.8039</td>
-      <td>0.9541</td>
+      <td>0.8041</td>
+      <td><strong>0.9207</strong></td>
     </tr>
     <tr>
       <td rowspan="4">Bone</td>
       <td>1</td>
       <td>0.0972</td>
       <td>0.0925</td>
-      <td>0.0817</td>
+      <td>0.0794</td>
       <td>0.8521</td>
-      <td>0.8552</td>
-      <td>0.8526</td>
+      <td>0.8551</td>
+      <td>0.8635</td>
     </tr>
     <tr>
       <td>4</td>
       <td>0.0910</td>
-      <td>0.0842</td>
-      <td>0.0398</td>
+      <td>0.0841</td>
+      <td>0.0401</td>
       <td>0.8594</td>
-      <td>0.8662</td>
-      <td>0.9195</td>
+      <td>0.8663</td>
+      <td>0.9224</td>
     </tr>
     <tr>
       <td>8</td>
       <td>0.0908</td>
       <td>0.0838</td>
-      <td>0.0382</td>
+      <td>0.0386</td>
       <td>0.8596</td>
-      <td>0.8669</td>
-      <td>0.9202</td>
+      <td>0.8665</td>
+      <td>0.9233</td>
     </tr>
     <tr>
       <td>16</td>
       <td>0.0908</td>
-      <td>0.0837</td>
-      <td>0.0380</td>
+      <td>0.0838</td>
+      <td><strong>0.0383</strong></td>
       <td>0.8597</td>
-      <td>0.8669</td>
-      <td>0.9202</td>
+      <td>0.8668</td>
+      <td><strong>0.9234</strong></td>
     </tr>
     <tr>
       <td rowspan="4">Blob</td>
       <td>1</td>
       <td>0.0111</td>
       <td>0.0097</td>
-      <td>0.0178</td>
+      <td>0.0128</td>
       <td>0.9611</td>
-      <td>0.9657</td>
-      <td>0.9263</td>
+      <td>0.9658</td>
+      <td>0.9484</td>
     </tr>
     <tr>
       <td>4</td>
       <td>0.0104</td>
       <td>0.0088</td>
-      <td>0.0034</td>
+      <td>0.0054</td>
       <td>0.9627</td>
       <td>0.9688</td>
-      <td>0.9867</td>
+      <td>0.9764</td>
     </tr>
     <tr>
       <td>8</td>
       <td>0.0104</td>
       <td>0.0087</td>
-      <td>0.0030</td>
+      <td>0.0048</td>
       <td>0.9628</td>
-      <td>0.9690</td>
-      <td>0.9883</td>
+      <td>0.9688</td>
+      <td>0.9794</td>
     </tr>
     <tr>
       <td>16</td>
       <td>0.0104</td>
       <td>0.0087</td>
-      <td>0.0030</td>
+      <td><strong>0.0047</strong></td>
       <td>0.9627</td>
       <td>0.9688</td>
-      <td>0.9885</td>
+      <td><strong>0.9798</strong></td>
+    </tr>
+  </tbody>
+</table>
+<table>
+  <caption>
+    Average <strong>rNMP</strong> &amp; <strong>SSIM</strong> values for each phantom type
+    across different algorithms with different up-sampling settings, with the inclusion
+    of Poisson noise to the phantoms.
+  </caption>
+  <thead>
+    <tr>
+      <th rowspan="2">Phantom type</th>
+      <th rowspan="2">a value</th>
+      <th colspan="3"><strong>rNMP</strong></th>
+      <th colspan="3"><strong>SSIM</strong></th>
+    </tr>
+    <tr>
+      <th>S-SIRT</th>
+      <th>DART</th>
+      <th>S-DART</th>
+      <th>S-SIRT</th>
+      <th>DART</th>
+      <th>S-DART</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td rowspan="4">Mesh</td>
+      <td>1</td>
+      <td>0.0765</td>
+      <td>0.0705</td>
+      <td>0.0612</td>
+      <td>0.7581</td>
+      <td>0.7688</td>
+      <td>0.7648</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>0.0670</td>
+      <td>0.0552</td>
+      <td><strong>0.0238</strong></td>
+      <td>0.7754</td>
+      <td>0.8028</td>
+      <td><strong>0.8857</strong></td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>0.0668</td>
+      <td>0.0553</td>
+      <td>0.0247</td>
+      <td>0.7757</td>
+      <td>0.8026</td>
+      <td>0.8819</td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td>0.0668</td>
+      <td>0.0551</td>
+      <td>0.0244</td>
+      <td>0.7758</td>
+      <td>0.8033</td>
+      <td>0.8834</td>
+    </tr>
+    <tr>
+      <td rowspan="4">Bone</td>
+      <td>1</td>
+      <td>0.0980</td>
+      <td>0.0935</td>
+      <td><strong>0.0828</strong></td>
+      <td>0.8497</td>
+      <td>0.8521</td>
+      <td>0.8491</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>0.0919</td>
+      <td>0.0852</td>
+      <td>0.0850</td>
+      <td>0.8568</td>
+      <td>0.8629</td>
+      <td>0.7818</td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>0.0917</td>
+      <td>0.0849</td>
+      <td>0.0980</td>
+      <td>0.8570</td>
+      <td>0.8630</td>
+      <td>0.7583</td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td>0.0916</td>
+      <td>0.0848</td>
+      <td>0.1002</td>
+      <td>0.8571</td>
+      <td><strong>0.8633</strong></td>
+      <td>0.7543</td>
+    </tr>
+    <tr>
+      <td rowspan="4">Blob</td>
+      <td>1</td>
+      <td>0.0114</td>
+      <td>0.0103</td>
+      <td>0.0150</td>
+      <td>0.9597</td>
+      <td>0.9631</td>
+      <td>0.9395</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>0.0108</td>
+      <td>0.0094</td>
+      <td>0.0121</td>
+      <td>0.9612</td>
+      <td>0.9658</td>
+      <td>0.9440</td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>0.0108</td>
+      <td>0.0094</td>
+      <td>0.0126</td>
+      <td>0.9612</td>
+      <td>0.9658</td>
+      <td>0.9411</td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td>0.0108</td>
+      <td><strong>0.0093</strong></td>
+      <td>0.0125</td>
+      <td>0.9612</td>
+      <td><strong>0.9659</strong></td>
+      <td>0.9414</td>
     </tr>
   </tbody>
 </table>
