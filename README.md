@@ -376,8 +376,8 @@ Here are some sample reconstructions of the example mesh phantom.
 <table>
   <caption>
     Average <strong>rNMP</strong> &amp; <strong>SSIM</strong> values for each phantom family for DART,
-    changing the <em>p</em> parameter that signifies the random chance a pixel is sampled as a free pixel
-    together with the entire border.
+    changing the <em>p</em> parameter that signifies the probability a pixel is sampled as a fixed pixel
+    in the DART reconstruction.
   </caption>
   <thead>
     <tr>
