@@ -33,13 +33,12 @@ class SSIRT:
             self,
             gray_intensities: list | tuple,
         ) -> list:
-        """Define threshold array based on input gray_values.
-        Uses formula:
-        Tau_i = ( rho_i + rho_i+1 ) / 2
-        Where Tau is the threshold for gray value rho on position i in the array.
+        """Calculated gray-level intensity thresholds for segmentation based on the formula:
+        `Tau_i = ( rho_i + rho_i+1 ) / 2`
+        Where `Tau` is the threshold for `gray-value` `rho_i` on position `i` in the array.
         
         Args:
-            gray_intensities (list | tuple or array_like): List of known gray levels in the image from low to high.
+            gray_intensities (list | tuple): List of known gray levels in the image from low to high.
         
         Returns:
             List of gray value thresholds according to the formula.
@@ -53,22 +52,23 @@ class SSIRT:
 
         return thresholds
 
+
     def segment(
             self,
             inp: np.ndarray,
             thresholds: list | tuple,
             gray_intensities: list | tuple,
-        ):
+        ) -> np.ndarray:
         """ Creates a simple segmentation according to the thresholds given in thresholds.
 
         Args:
-            inp (np.ndarray): Input image.
+            inp (numpy.ndarray): Input image.
             threshold (list | tuple): Array of thresholds for each gray level value.
             gray_intensities (list | tuple):  Array of prior gray levels defined by the user for each threshold.
         
         Returns:
             Segmented image where each pixel from in the input image is thresholded for
-            each threshold i in thresholds, and replaced by gray_intensities[i]if it is in
+            each threshold `i` in thresholds, and replaced by `gray_intensities[i]` if it is in
             between the current and next threshold.
         """
         output_img = np.zeros(inp.shape, dtype=np.uint8)
@@ -83,14 +83,15 @@ class SSIRT:
         return output_img
 
 
-    def run(self, gray_intensities: list, iterations: int):
-        """ Create a SIRT reconstruction for the given input image, free_pixel mask.
-        If free_pixels is None, then an initial reconstruction from the sinogram in self.sino is
-        taken with an empty prior reconstruction.
+    def run(self, gray_intensities: list, iterations: int) -> np.ndarray:
+        """ Create a SIRT reconstruction for the given input image.
         
         Args:
             reconstruction (np.ndarray | None): Prior reconstructed input image.
-            free_pixels (np.ndarray | None): Input mask for each free pixel in the input
+            iterations (integer): Number of iterations to run the algorithm for.
+        
+        Returns:
+            Numpy ndarray of image reconstruction.
         """
 
         # Create the SIRT config

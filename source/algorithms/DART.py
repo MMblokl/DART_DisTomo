@@ -32,11 +32,11 @@ class DART():
         self.sino_id = astra.data2d.create('-sino', self.proj_geom, data=sinogram)
 
 
-    def border_detect(self, inp: np.ndarray):
+    def border_detect(self, inp: np.ndarray) -> np.ndarray:
         """Border pixel returns, basically just an edge detection
         
         Args:
-            inp (:class:`numpy.ndarray`): Input image as ndarray.
+            inp (numpy.ndarray): Numpy ndarray of input image.
 
         Returns:
             Boolean/binary image with True on edges/borders.
@@ -60,11 +60,11 @@ class DART():
         return edges
 
 
-    def smoothing(self, inp: np.ndarray):
+    def smoothing(self, inp: np.ndarray) -> np.ndarray:
         """Smoothing function for after a single reconstruction
         
         Args:
-            inp (:class:`numpy.ndarray`): Input image
+            inp (numpy.ndarray): Numpy ndarray of input image.
         
         Returns:
             Smoothed input image.
@@ -72,14 +72,13 @@ class DART():
         return gaussian_filter(inp, sigma=1)
 
 
-    def free_pixels(self):
+    def free_pixels(self) -> np.ndarray:
         """Samples random locations based on image shape where free_pixels will be located.
         
         Returns:
             np.ndarray of shape self.img_shape with a number of True according 1-self.p, with the rest False.
         """
-        # We sample a random number of free pixels according to self.p
-        # p - (1 - p) chance to be or not to be included from boundary pixels
+        # We sample a random number of free pixels according to (1-self.p)
         output = np.random.choice([False,True], self.img_shape, p=[self.p, 1-self.p])
 
         return output
@@ -89,14 +88,12 @@ class DART():
             self,
             gray_intensities: list | tuple,
         ) -> list:
-        """
-        Define threshold array based on input gray_values.
-        Uses formula:
+        """Calculated gray-level intensity thresholds for segmentation based on the formula:
         `Tau_i = ( rho_i + rho_i+1 ) / 2`
-        Where `Tau` is the threshold for `gray-value rho` on position `i` in the array.
+        Where `Tau` is the threshold for `gray-value` `rho_i` on position `i` in the array.
         
         Args:
-            gray_intensities (list | tuple or array_like): List of known gray levels in the image from low to high.
+            gray_intensities (list | tuple): List of known gray levels in the image from low to high.
         
         Returns:
             List of gray value thresholds according to the formula.
@@ -116,13 +113,13 @@ class DART():
             inp: np.ndarray,
             thresholds: list | tuple,
             gray_intensities: list | tuple,
-        ):
+        ) -> np.ndarray:
         """ Creates a simple segmentation according to the thresholds given in thresholds.
 
         Args:
-            inp (:class:`numpy.ndarray`): Input image.
-            threshold (`list` | `tuple`): Array of thresholds for each gray level value.
-            gray_intensities (`list` | `tuple`):  Array of prior gray levels defined by the user for each threshold.
+            inp (numpy.ndarray): Input image.
+            threshold (list | tuple): Array of thresholds for each gray level value.
+            gray_intensities (list | tuple):  Array of prior gray levels defined by the user for each threshold.
         
         Returns:
             Segmented image where each pixel from in the input image is thresholded for
@@ -147,12 +144,12 @@ class DART():
             free_pixels: np.ndarray | None = None,
         ):
         """ Create a SIRT reconstruction for the given input image, free_pixel mask.
-        If free_pixels is None, then an initial reconstruction from the sinogram in self.sino is
+        If free_pixels is None, an initial reconstruction from the sinogram in self.sino is
         taken with an empty prior reconstruction.
         
         Args:
-            reconstruction (:class:`numpy.ndarray` | `None`): Prior reconstructed input image.
-            free_pixels (:class:`numpy.ndarray` | `None`): Input mask for each free pixel in the input
+            reconstruction (numpy.ndarray | None): Prior reconstructed input image.
+            free_pixels (numpy.ndarray | None): Input mask for each free pixel in the input
         
         Returns:
             Reconstruction based on `free_pixels` and current `reconstruction`.
@@ -215,7 +212,7 @@ class DART():
         return reconstruction
     
 
-    def run(self, p: int, gray_intensities: list, iterations: int):
+    def run(self, p: int, gray_intensities: list, iterations: int) -> np.ndarray:
         """Run the DART algorithm according to the initializated values.
         
         Args:
