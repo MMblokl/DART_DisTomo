@@ -63,19 +63,6 @@ class SDART():
         return count
 
 
-    def smoothing(self, inp: np.ndarray):
-        """Smoothing function for after a single reconstruction
-        
-        Args:
-            inp (numpy.ndarray): Input image numpy ndarray.
-        
-        Returns:
-            Smoothed input image.
-        """
-        return gaussian_filter(inp, sigma=1)
-
-
-
     def lsqr_recon(self, B, W, v):
         """Reconstruction using B, W and v with a least squares problem solver.
         
