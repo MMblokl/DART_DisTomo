@@ -115,9 +115,9 @@ for phantom_group in glob.glob("./phantoms/*"):
             )
 
             # Reconstruction for this a-value
-            ssirt_res = ssirt.run(gray_intensities=grey_intensities, iterations=100)
-            dart_res = dart.run(p=0.4, gray_intensities=grey_intensities, iterations=100)
-            sdart_res = sdart.run(gray_intensities=grey_intensities, iterations=100)
+            ssirt_res = ssirt.run(grey_intensities=grey_intensities, iterations=100)
+            dart_res = dart.run(p=0.4, grey_intensities=grey_intensities, iterations=100)
+            sdart_res = sdart.run(grey_intensities=grey_intensities, iterations=100)
 
             # Save results
             results[p_group][a_val]["ssirt"]["rnmp"].append(calc_rnmp(img, ssirt_res))

@@ -37,8 +37,8 @@ sdart_25 = SDART.SDART(
     reconstruction_iterations=25,
 )
 
-resdart_100 = sdart_100.run(gray_intensities=grey_intensities, iterations=100)
-resdart_25 = sdart_25.run(gray_intensities=grey_intensities, iterations=100)
+resdart_100 = sdart_100.run(grey_intensities=grey_intensities, iterations=100)
+resdart_25 = sdart_25.run(grey_intensities=grey_intensities, iterations=100)
 
 saveimg(resdart_100, f"./noisy_sdart_100iter4a.png")
 saveimg(resdart_25, f"./noisy_sdart_25iter4a.png")

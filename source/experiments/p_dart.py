@@ -46,7 +46,7 @@ for phantom_group in glob.glob("./phantoms/*"):
             )
             
             # Reconstruct phatnom from sinogram
-            rec_img = dart.run(p=p_val, gray_intensities=grey_intensities, iterations=100)
+            rec_img = dart.run(p=p_val, grey_intensities=grey_intensities, iterations=100)
             
             # Save metrics to dict
             rnmp = calc_rnmp(img, rec_img)

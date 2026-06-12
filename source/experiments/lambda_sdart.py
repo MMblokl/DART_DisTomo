@@ -50,7 +50,7 @@ for phantom_group in glob.glob("./phantoms/*"):
             )
             
             # Reconstruct phantom from sinogram
-            rec_img = sdart.run(gray_intensities=grey_intensities, iterations=100)
+            rec_img = sdart.run(grey_intensities=grey_intensities, iterations=100)
 
             # Save results
             rnmp = calc_rnmp(img, rec_img)
