@@ -22,8 +22,10 @@ These instructions are for linux only, specifically debian.
     - `curl -LsSf https://astral.sh/uv/install.sh | sh`
     - uv is also availble on PyPi, so `pipx` and `pip` also works: `pip install uv`
 2. Installing packages:
-    - If you do not have any disk quotas, simply use: `uv sync`
-    - If you DO have disk quotas, set a cache location for packages first: `export UV_CACHE_DIR=/etc/data_location_here/.cache/uv/`
+    - `uv sync`
+    - If you have a disk quota for storage space, make sure to set your uv cache to somewhere that has a high storage limit:
+        - `export UV_CACHE_DIR=/etc/data_location_here/.cache/uv/`
+        - `uv sync`
 3. Running python
     - Run scripts using: `uv run python -m source.<script>` for module packages.
     - Alternatively: `source .venv/bin/activate` followed by `python3 -m source.<script>` for module packages.
@@ -76,11 +78,11 @@ All experiment routines can be found in `./source/experiments/`, and have to be 
 - `./source/experiments/run_all.py` is the script for running the complete experiments for all phantom images present in the `./phantoms/` directory. It will go through four `a` parameters for DetectorSuperSampling, `1, 4, 8` and `16` and take the mean `rNMP` and `SSIM` for each phantom family/group for each algorithm seperately. The sinograms are sampled using `64` detector elements, with the DetectorSuperSampling option during the sinogram sampling set to the same value as the detector element spacing. In the case of our experiments, this was `8`, as this makes the detector the same width as the phantoms, which was `512`. The script can be given two commandline options to change whether random poisson noise will be added to the sinogram or not.
 
     - To run using the original sinograms:
-    `uv run python -m source.run_all`
+    `uv run python -m source.experiments.run_all`
 
         This will run all algorithms with clean sinograms, the results will be saved as `./clean_results.json`.
     - To run using sinograms with added noise:
-    `uv run python -m source.run_all noisy`
+    `uv run python -m source.experiments.run_all noisy`
 
         This will add poisson noise using `astra.functions.add_noise_to_sino` with a background intensity of `1e5`. The results are saved in `./noisy_results.json`.
 
