@@ -75,14 +75,14 @@ All experiment routines can be found in `./source/experiments/`, and have to be 
 
   - The images will be saved as `./noisy_sdart_100iter4a.png` and `./noisy_sdart_25iter4a.png`.
 
-- `./source/experiments/run_all.py` is the script for running the complete experiments for all phantom images present in the `./phantoms/` directory. It will go through four `a` parameters for DetectorSuperSampling, `1, 4, 8` and `16` and take the mean `rNMP` and `SSIM` for each phantom family/group for each algorithm seperately. The sinograms are sampled using `64` detector elements, with the DetectorSuperSampling option during the sinogram sampling set to the same value as the detector element spacing. In the case of our experiments, this was `8`, as this makes the detector the same width as the phantoms, which was `512`. The script can be given two commandline options to change whether random poisson noise will be added to the sinogram or not.
+- `./source/experiments/supersampling.py` is the script for running the complete experiments for all phantom images present in the `./phantoms/` directory. It will go through four `a` parameters for DetectorSuperSampling, `1, 4, 8` and `16` and take the mean `rNMP` and `SSIM` for each phantom family/group for each algorithm seperately. The sinograms are sampled using `64` detector elements, with the DetectorSuperSampling option during the sinogram sampling set to the same value as the detector element spacing. In the case of our experiments, this was `8`, as this makes the detector the same width as the phantoms, which was `512`. The script can be given two commandline options to change whether random poisson noise will be added to the sinogram or not.
 
     - To run using the original sinograms:
-    `uv run python -m source.experiments.run_all`
+    `uv run python -m source.experiments.supersampling`
 
         This will run all algorithms with clean sinograms, the results will be saved as `./clean_results.json`.
     - To run using sinograms with added noise:
-    `uv run python -m source.experiments.run_all noisy`
+    `uv run python -m source.experiments.supersampling noisy`
 
         This will add poisson noise using `astra.functions.add_noise_to_sino` with a background intensity of `1e5`. The results are saved in `./noisy_results.json`.
 
