@@ -52,7 +52,7 @@ All experiment routines can be found in `./source/experiments/`, and have to be 
 
     - The results will be saved in `./lambda_results.json`.
 
-- `./source/experiments/p_dart.py` is the routine for the free_pixels sampling chance for DART.
+- `./source/experiments/p_dart.py` is the routine for the fixed_pixels sampling chance for DART.
 
     - To run:
     `uv run python -m source.experiments.p_dart`
