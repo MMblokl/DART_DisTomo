@@ -57,26 +57,32 @@ All experiment routines can be found in `./source/experiments/`, and have to be 
     - To run:
     `uv run python -m source.experiments.p_dart`
 
+    - The results will be saved in `./p_dart_results.json`.
+
 - `./source/experiments/visualize_algs.py` is a routine for creating some images for each algorithm of the phantom `"./phantoms/meshes/mesh_7.png"` for four different DetectorSuperSampling `a` parameters. The number of detectors for sinogram sampling is set to `64` with `180` projection angles. These will be stored in `./visuals/` as PNGs.
 
     - To run:
     `uv run python -m source.experiments.visualize_algs`
+
+    - The results are saved in `./visuals/`.
 
 - `./source/experiments/noisy_sdart.py` is a routine for quickly visualizing 2 reconstructions using SDART with added noise into the `./phantoms/bones/bone_5.png` phantoms. This shows that in the prescence of noise in the sinogram, having too many iterations for the internal lsqr actually has a negative effect for the reconstruction, especially if we apply DetectorSuperSampling.
 
   - To run:
   `uv run python -m source.experiments.noisy_sdart`
 
+  - The images will be saved as `./noisy_sdart_100iter4a.png` and `./noisy_sdart_25iter4a.png`.
+
 - `./source/experiments/run_all.py` is the script for running the complete experiments for all phantom images present in the `./phantoms/` directory. It will go through four `a` parameters for DetectorSuperSampling, `1, 4, 8` and `16` and take the mean `rNMP` and `SSIM` for each phantom family/group for each algorithm seperately. The sinograms are sampled using `64` detector elements, with the DetectorSuperSampling option during the sinogram sampling set to the same value as the detector element spacing. In the case of our experiments, this was `8`, as this makes the detector the same width as the phantoms, which was `512`. The script can be given two commandline options to change whether random poisson noise will be added to the sinogram or not.
 
     - To run using the original sinograms:
     `uv run python -m source.run_all`
 
-        This will run all algorithms with clean sinograms.
+        This will run all algorithms with clean sinograms, the results will be saved as `./clean_results.json`.
     - To run using sinograms with added noise:
     `uv run python -m source.run_all noisy`
 
-        This will add poisson noise using `astra.functions.add_noise_to_sino` with a background intensity of `1e5`.
+        This will add poisson noise using `astra.functions.add_noise_to_sino` with a background intensity of `1e5`. The results are saved in `./noisy_results.json`.
 
 
 ## Phantoms

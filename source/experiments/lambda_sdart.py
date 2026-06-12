@@ -35,7 +35,9 @@ for phantom_group in glob.glob("./phantoms/*"):
         img = Image.open(phantom)
         img = np.asarray(img)
 
+        
         for lambda_val in lambdas:
+            # Sample sinogram
             proj_geom, sino = create_sinogram(img, 64, 180)
 
             sdart = SDART(
@@ -46,24 +48,25 @@ for phantom_group in glob.glob("./phantoms/*"):
                 reconstruction_iterations=100,
                 lambda_hp=lambda_val
             )
-
+            
+            # Reconstruct phantom from sinogram
             rec_img = sdart.run(gray_intensities=grey_intensities, iterations=100)
 
+            # Save results
             rnmp = calc_rnmp(img, rec_img)
             ssim = calc_ssim(img, rec_img)
-
             results[p_group][lambda_val]["rnmp"].append(rnmp)
             results[p_group][lambda_val]["ssim"].append(ssim)
     
         print(f"Finished with phantom {phantom}.")
     print(f"Finished with phantom family {phantom_group}.")
 
-# Average values stored in dictionary
+# Average the values over each phantom type/group
 for phantom_group in results.keys():
     for p_val in results[phantom_group].keys():
         final_results[phantom_group][p_val]["rnmp"] = np.mean(results[phantom_group][p_val]["rnmp"])
         final_results[phantom_group][p_val]["ssim"] = np.mean(results[phantom_group][p_val]["ssim"])
 
-# Save to json
+# Save resulting dictionary directly to a JSON
 with open("lambda_results.json", "w") as f:
     json.dump(final_results, f)

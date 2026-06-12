@@ -90,6 +90,7 @@ for phantom_group in glob.glob("./phantoms/*"):
         if noisy:
             sino = astra.functions.add_noise_to_sino(sino, 1e5, seed=seed)
 
+        # Run each algorithm on this phantom using different a supersampling values for the reconstruction
         for a_val in a_vals:
             ssirt = SSIRT.SSIRT(
                 proj_geom=proj_geom,
@@ -113,10 +114,12 @@ for phantom_group in glob.glob("./phantoms/*"):
                 reconstruction_iterations=100,
             )
 
+            # Reconstruction for this a-value
             ssirt_res = ssirt.run(gray_intensities=grey_intensities, iterations=100)
             dart_res = dart.run(p=0.4, gray_intensities=grey_intensities, iterations=100)
             sdart_res = sdart.run(gray_intensities=grey_intensities, iterations=100)
 
+            # Save results
             results[p_group][a_val]["ssirt"]["rnmp"].append(calc_rnmp(img, ssirt_res))
             results[p_group][a_val]["ssirt"]["ssim"].append(calc_ssim(img, ssirt_res))
             results[p_group][a_val]["dart"]["rnmp"].append(calc_rnmp(img, dart_res))
@@ -127,6 +130,7 @@ for phantom_group in glob.glob("./phantoms/*"):
         print(f"Finished phantom {phantom}.")
     print(f"Finished famility {phantom_group}.")
 
+# Average results over each phantom group
 for phantom_group in results.keys():
     for a_val in results[phantom_group].keys():
         for recon_alg in results[phantom_group][a_val].keys():
@@ -134,6 +138,7 @@ for phantom_group in results.keys():
             final_results[phantom_group][a_val][recon_alg]["ssim"] = np.mean(results[phantom_group][a_val][recon_alg]["ssim"])
 
 
+# Save results to JSON
 filename = "./noisy_results.json" if noisy else "./clean_results.json"
 with open(filename, "w") as f:
     json.dump(final_results, f) 

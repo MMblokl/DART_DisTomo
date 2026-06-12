@@ -16,11 +16,13 @@ phantom = "./phantoms/meshes/mesh_7.png"
 img = Image.open(phantom)
 img = np.asarray(img)
 proj_geom, sino = create_sinogram(img, 64, 180)
+
+# Save some sinogram visuals
 saveimg(sino, f"./visuals/sinogram_clean.png")
 saveimg(astra.functions.add_noise_to_sino(sino, 1e5, seed=202667), "./visuals/sinogram_noisy.png")
 
 
-# For each supersampling a-value, save one image per alg.
+# Save one overlap image per a-value per algorithm
 for a_val in a_vals:
     ssirt = SSIRT.SSIRT(
         proj_geom=proj_geom,
@@ -47,6 +49,7 @@ for a_val in a_vals:
     dart_res = dart.run(p=0.4, gray_intensities=grey_intensities, iterations=100)
     sdart_res = sdart.run(gray_intensities=grey_intensities, iterations=100)
     
+    # Save overlap images
     save_overlap(img, ssirt_res, f"./visuals/ssirt_{a_val}.png")
     save_overlap(img, dart_res, f"./visuals/dart_{a_val}.png")
     save_overlap(img, sdart_res, f"./visuals/sdart_{a_val}.png")

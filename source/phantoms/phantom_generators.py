@@ -25,7 +25,7 @@ def gen_blob(
         quant (integer): Number of phantoms to generate.
         source_dir (str): Location to save each blob phantom in.
         resolution (integer): Cubic phantom resolution.
-        shape_var (integer): Numberic variation in the size of circles and ellipses.
+        shape_var (integer): Numeric variation in the size of circles and ellipses.
         margin (integer): Margin between shape elements, e.g. the border and inner/outer elements.
         backgroun_amt (integer): Number of background shapes.
         foreground_amt (integer): Number of foreground shapes.
@@ -43,7 +43,7 @@ def gen_blob(
         for i in range(background_amt):
             # 50-50 chance to place a circle, otherwise an ellipse.
             match random.randint(0,1):
-                case 0:   # Draw ellipse within margin of empty space
+                case 0: # Draw ellipse within margin of empty space
                     rr, cc = draw.ellipse(random.randint(margin,resolution - margin), # Random location within margin
                                                                 random.randint(margin,resolution - margin),
                                                                 shape_var+random.randint(0, shape_var), # Random shape from (0, shape_var)
@@ -116,7 +116,6 @@ def gen_mesh(seed: int,
     random.seed(seed)
     np.random.seed(seed)
     
-    # Create
     if not isdir(source_dir):
         makedirs(source_dir)
 
@@ -133,12 +132,13 @@ def gen_mesh(seed: int,
 
         # Draw each vertex in the voronoi in the numpy image
         for ridge in v.ridge_vertices:
-            if -1 in ridge: # Non-existant vertex, which is ignored. This happens as scipy generated voronois in inf spacing on the outer neighbourhoods.
+            # If a ridge is -1, the vertex is existent, this happens as scipy generated voronois in inf spacing on the outer neighbourhoods.
+            if -1 in ridge:
                 continue
             # Get vertex not in inf space
             vertex = v.vertices[ridge]
 
-            # Get coordinates and clip to defined resolution, minus the margin
+            # Get the coordinates of each vertex in the Voronoi, and clip them to our pre-defined resolution, taking margin into account
             r0, c0 = vertex[0]
             r1, c1 = vertex[1]
             r0 = np.clip(r0, margin, resolution - margin)
@@ -146,7 +146,7 @@ def gen_mesh(seed: int,
             r1 = np.clip(r1, margin, resolution - margin)
             c1 = np.clip(c1, margin, resolution - margin)
 
-            # Draw the line using the coordinates.
+            # Draw the vertices as line using the coordinates.
             rr, cc = draw.line(int(r0), int(c0), int(r1), int(c1))
             img[rr, cc] = 255
 
@@ -185,7 +185,7 @@ def gen_bone(
         source_dir (str): Location to save each blob phantom in.
         resolution (integer): Cubic phantom resolution.
         margin (integer): Value indicating how much margin there is between groups of elements and the border.
-        shape_var (integer): Numberic variation in the size of circles and ellipses.
+        shape_var (integer): Numeric variation in the size of circles and ellipses.
         n_outer (integer): Number of outer shapes to draw outer shape from.
         n_core (integer): Number of shapes for the inner core dots.
         outer_intensity (integer): Gray-value intensity of the outer margin
@@ -210,7 +210,8 @@ def gen_bone(
                 c = random.randint(margin, resolution - margin)
 
                 # 50-50 to generate either an ellipse or a circle
-                if random.randint(0, 1) == 0:
+                match random.randint(0, 1):
+                    case 0:
                         rr, cc = draw.ellipse(
                                 r, c,
                                 shape_var + random.randint(0, 40), # Random ellipse shape
@@ -218,7 +219,7 @@ def gen_bone(
                                 rotation=np.deg2rad(random.randint(0, 180)),    # Random 180 degree rotation
                                 shape=img.shape
                         )
-                else:
+                    case _:
                         rr, cc = draw.disk(
                                 (r, c),
                                 shape_var + random.randint(0, 40), # Random circle diameter.
@@ -229,6 +230,7 @@ def gen_bone(
         # Closing with a disk to fill out any holes in between randomly placed shaped
         mask_outer = morphology.binary_closing(mask_outer, morphology.disk(15))
         img[mask_outer] = outer_intensity # Fill drawn shapes with defined intensity
+        
         # Create the inner region of higher contrast withing the outer region
         mask_inner = morphology.binary_erosion(mask_outer, morphology.disk(35)) # Binary erosion of a copy of the outer region.
         img[mask_inner] = inner_intensity # Fill inner region with defined intensity

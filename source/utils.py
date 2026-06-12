@@ -3,10 +3,10 @@ import PIL.Image as Image
 import astra
 
 def rescale(array):
-    """Saves ndarray as PIL image png.
+    """Rescales np array to 0-255
 
     Args:
-        Array (numpyp.ndarray): Input image
+        Array (numpy.ndarray): Input image
     
     Returns:
         Array clipped to (0-255) grayscale values.
@@ -40,21 +40,23 @@ def save_overlap(ground_truth: np.ndarray, recon: np.ndarray, name:str):
     """
     rgb_image = np.zeros((ground_truth.shape[0], ground_truth.shape[0], 3), dtype=np.uint8)
     
-    # Get the overlap, and unique pixels to
-    only_gt = (ground_truth & ~recon) == 255
-    overlap = (ground_truth & recon) == 255
-    only_recon = (recon & ~ground_truth) == 255
+    # Get the overlapping pixels, which creates a boolean ndarray for each pixel
+    only_gt = (ground_truth & ~recon) == 255 # Pixels only present in recon
+    overlap = (ground_truth & recon) == 255 # Pixels present in both ground_trurh and recon
+    only_recon = (recon & ~ground_truth) == 255 # Pixels only present in recon
 
-    # Save each channel
+    # Save each channel as 255 intensity
     rgb_image[:,:, 0] = only_gt * 255
     rgb_image[:,:, 1] = overlap * 255
     rgb_image[:,:, 2] = only_recon * 255
     
+    # Save to image
     img = Image.fromarray(rgb_image, mode="RGB")
     img.save(name)
 
 
-# Function taken from astra.creators.create_sino, added an option for supersampling for DetectorSuperSampling.
+# Function taken from astra.creators.create_sino
+# Functionally identical, with an addition of the supersampling_a option in the config
 def create_fp(data, proj_id, returnData=True, gpuIndex=None, supersampling_a: int | None = None):
     """Create a forward projection of an image (2D).
 
@@ -92,8 +94,11 @@ def create_fp(data, proj_id, returnData=True, gpuIndex=None, supersampling_a: in
     cfg['ProjectorId'] = proj_id
     if gpuIndex is not None:
         cfg['option'].update({'GPUindex': gpuIndex})
+    
+    # Supersampling addition
     if supersampling_a is not None:
         cfg["option"].update({"DetectorSuperSampling": supersampling_a})
+    
     cfg['ProjectionDataId'] = sino_id
     cfg['VolumeDataId'] = volume_id
     alg_id = astra.algorithm.create(cfg)
@@ -134,16 +139,18 @@ def create_sinogram(
     vol_geom = astra.create_vol_geom(*img.shape) 
     data_id = astra.data2d.create('-vol', vol_geom, img)
     
-    # Makes sure the plane of detectors spans the entire pixel grid resolution / number of detectors.
+    # Makes sure the plane of detectors spans the entire pixel grid resolution.
     spacing = img.shape[0] / n_detectors
     # Supersampling, make each pixel in the image grid have a projection ray.
     if supersampling_a is None:
         supersampling_a = int(spacing)
 
     # Projections using np.linspace, cutting off the last element of np.pi
-    proj_geom = astra.create_proj_geom('parallel', spacing, n_detectors, np.linspace(0, np.pi, n_projections + 1)[:-1])
+    projection_angles = np.linspace(0, np.pi, n_projections + 1)[:-1]
+    proj_geom = astra.create_proj_geom('parallel', spacing, n_detectors, projection_angles)
     proj_id = astra.create_projector('cuda', proj_geom, vol_geom, options={"DetectorSuperSampling": supersampling_a})
-    # Create the sinogram
+    
+    # Create the sinogram using the create_fp function
     sino_id, sino = create_fp(data_id, proj_id, supersampling_a=supersampling_a)
 
     # Data storage cleanup

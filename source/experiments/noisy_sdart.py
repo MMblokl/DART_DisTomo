@@ -12,9 +12,12 @@ grey_intensities = [0, 110, 150, 220]
 phantom = "./phantoms/bones/bone_5.png"
 img = Image.open(phantom)
 img = np.asarray(img)
+
+# Calculate sinogram and add poisson noise with a set seed.
 proj_geom, sino = create_sinogram(img, 64, 180)
 sino = astra.functions.add_noise_to_sino(sino, 1e5, seed=202667)
 
+# 100 LSQR iterations
 sdart_100 = SDART.SDART(
     proj_geom=proj_geom,
     sinogram=sino,
@@ -24,6 +27,7 @@ sdart_100 = SDART.SDART(
     reconstruction_iterations=100,
 )
 
+# 25 LSQR iterations
 sdart_25 = SDART.SDART(
     proj_geom=proj_geom,
     sinogram=sino,
@@ -45,4 +49,4 @@ results = {
 }
 
 with open("./noisy_sdart_overestimation.json", "w") as f:
-    json.dump(final, f) 
+    json.dump(results, f) 
