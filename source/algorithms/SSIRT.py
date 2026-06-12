@@ -25,25 +25,25 @@ class SSIRT:
         self.sino_id = astra.data2d.create('-sino', self.proj_geom, data=sinogram)
     
 
-    def gray_thresholds(
+    def grey_thresholds(
             self,
-            gray_intensities: list | tuple,
+            grey_intensities: list | tuple,
         ) -> list:
-        """Calculated gray-level intensity thresholds for segmentation based on the formula:
+        """Calculated grey-level intensity thresholds for segmentation based on the formula:
         `Tau_i = ( rho_i + rho_i+1 ) / 2`
-        Where `Tau` is the threshold for `gray-value` `rho_i` on position `i` in the array.
+        Where `Tau` is the threshold for `grey-value` `rho_i` on position `i` in the array.
         
         Args:
-            gray_intensities (list | tuple): List of known gray levels in the image from low to high.
+            grey_intensities (list | tuple): List of known grey levels in the image from low to high.
         
         Returns:
-            List of gray value thresholds according to the formula.
+            List of grey value thresholds according to the formula.
         """
         # 
         # Pad with 0 and 255 at start and end
         thresholds = [0] + [
-            (gray_intensities[i] + gray_intensities[i+1]) / 2
-            for i in range(len(gray_intensities) - 1)
+            (grey_intensities[i] + grey_intensities[i+1]) / 2
+            for i in range(len(grey_intensities) - 1)
         ] + [255]
 
         return thresholds
@@ -53,18 +53,18 @@ class SSIRT:
             self,
             inp: np.ndarray,
             thresholds: list | tuple,
-            gray_intensities: list | tuple,
+            grey_intensities: list | tuple,
         ) -> np.ndarray:
         """ Creates a simple segmentation according to the thresholds given in thresholds.
 
         Args:
             inp (numpy.ndarray): Input image.
-            threshold (list | tuple): Array of thresholds for each gray level value.
-            gray_intensities (list | tuple):  Array of prior gray levels defined by the user for each threshold.
+            threshold (list | tuple): Array of thresholds for each grey level value.
+            grey_intensities (list | tuple):  Array of prior grey levels defined by the user for each threshold.
         
         Returns:
             Segmented image where each pixel from in the input image is thresholded for
-            each threshold `i` in thresholds, and replaced by `gray_intensities[i]` if it is in
+            each threshold `i` in thresholds, and replaced by `grey_intensities[i]` if it is in
             between the current and next threshold.
         """
         output_img = np.zeros(inp.shape, dtype=np.uint8)
@@ -73,13 +73,13 @@ class SSIRT:
             # At each pixel of the input, get indexes that are both above current threshold and are not above the next threshold
             segmentation = (inp >= threshold) * (inp <= thresholds[i + 1])
             
-            # Fill segmented areas into ouput with gray values for that specific threshold
-            output_img[segmentation] = gray_intensities[i]
+            # Fill segmented areas into ouput with grey values for that specific threshold
+            output_img[segmentation] = grey_intensities[i]
         
         return output_img
 
 
-    def run(self, gray_intensities: list, iterations: int) -> np.ndarray:
+    def run(self, grey_intensities: list, iterations: int) -> np.ndarray:
         """ Create a SIRT reconstruction for the given input image.
         
         Args:
@@ -117,8 +117,8 @@ class SSIRT:
         astra.data2d.delete(reconstruction_id)
 
         # segment using the same setup as in DART
-        # Define thresholds for pre-defined gray values
-        thresholds = self.gray_thresholds(gray_intensities)
-        segmentation = self.segment(inp=reconstruction, thresholds=thresholds, gray_intensities=gray_intensities)
+        # Define thresholds for pre-defined grey values
+        thresholds = self.grey_thresholds(grey_intensities)
+        segmentation = self.segment(inp=reconstruction, thresholds=thresholds, grey_intensities=grey_intensities)
 
         return segmentation
