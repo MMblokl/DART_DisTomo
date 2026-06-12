@@ -1,9 +1,5 @@
 import astra
 import numpy as np
-from copy import copy
-from PIL import Image
-from source.utils import saveimg, create_sinogram
-from source.metrics import calc_rnmp, calc_ssim
 
 class SSIRT:
     def __init__(
@@ -95,17 +91,17 @@ class SSIRT:
         """
 
         # Create the SIRT config
-
         config = astra.astra_dict("SIRT_CUDA")
         config["option"] = {}
         
-        # None if this is the first initial reconstruction
-        # If there is no free_pixel_mask given, we make a blank image from the vol_geom
+        # Create an empty reconstruction ID to place it into
         reconstruction_id = astra.data2d.create("-vol", self.vol_geom, data=0.0)
         config["ProjectionDataId"] = self.sino_id
+        # If supersampling is supplied to the class, turn it on in the alg config.
         if self.supersampling_a:
             config["option"].update({"DetectorSuperSampling": self.supersampling_a})
 
+        # Set the reconstruction ID and the upper and lower bound to 0, 255
         config["ReconstructionDataId"] = reconstruction_id
         config["option"].update({'MinConstraint': 0.0, 'MaxConstraint': 255.0})
         
@@ -120,23 +116,9 @@ class SSIRT:
         astra.algorithm.delete(alg_id)
         astra.data2d.delete(reconstruction_id)
 
+        # segment using the same setup as in DART
         # Define thresholds for pre-defined gray values
         thresholds = self.gray_thresholds(gray_intensities)
         segmentation = self.segment(inp=reconstruction, thresholds=thresholds, gray_intensities=gray_intensities)
 
         return segmentation
-
-
-if __name__ == "__main__":
-    img = Image.open("./phantoms/meshes/mesh_0.png")
-    img = np.asarray(img)
-    
-    proj_geom, sino = create_sinogram(img, 128, 512, supersampling_a=None)
-
-    dart = SSIRT(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, supersampling_a=None)
-    reconstructed_image = dart.run(iterations=100, gray_intensities=[0,255])
-
-    print("RNMP, SSIM")
-    print(calc_rnmp(img, reconstructed_image), calc_ssim(img, reconstructed_image))
-
-    saveimg(reconstructed_image, "./base.png")

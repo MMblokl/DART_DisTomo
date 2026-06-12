@@ -4,9 +4,8 @@ import numpy as np
 from PIL import Image
 from os import makedirs
 from os.path import isdir
-from scipy.spatial import Voronoi, voronoi_plot_2d
+from scipy.spatial import Voronoi
 from skimage import draw, morphology
-from source.utils import saveimg
 
 # Define random seed for numpy as random module
 def gen_blob(

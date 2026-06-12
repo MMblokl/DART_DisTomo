@@ -1,10 +1,7 @@
 import astra
 import numpy as np
-from PIL import Image
 from scipy.ndimage import gaussian_filter
 from copy import copy
-from source.utils import saveimg, create_sinogram
-from source.metrics import calc_rnmp, calc_ssim
 
 class DART():
     def __init__(
@@ -44,7 +41,9 @@ class DART():
         # Simple image padding to prevent index errors
         pad = np.pad(inp, 1, mode="edge")
 
-        # This is basically just a semi-vectorized method of checking each pixel.
+        # Vectorized method to check the neighbour of each pixel in one direction opposed to the "pad" image.
+        # Simply 8 equals checks of checking specific transforms of the "pad".
+        # If one of the checks (neighbours) is True, then the pixel from the "inp" image is set to True
         # This checks if any of the neighbours of one pixel is different, that pixel is an edge.
         edges = (
             (inp != pad[:-2, :-2]) | # Top left
@@ -84,25 +83,26 @@ class DART():
         return output
 
 
-    def gray_thresholds(
+    def grey_thresholds(
             self,
-            gray_intensities: list | tuple,
+            grey_intensities: list | tuple,
         ) -> list:
-        """Calculated gray-level intensity thresholds for segmentation based on the formula:
+        """Calculated grey-level intensity thresholds for segmentation based on the formula:
         `Tau_i = ( rho_i + rho_i+1 ) / 2`
-        Where `Tau` is the threshold for `gray-value` `rho_i` on position `i` in the array.
+        Where `Tau` is the threshold for `grey-value` `rho_i` on position `i` in the array.
         
         Args:
-            gray_intensities (list | tuple): List of known gray levels in the image from low to high.
+            grey_intensities (list | tuple): List of known grey levels in the image from low to high.
         
         Returns:
-            List of gray value thresholds according to the formula.
+            List of grey value thresholds according to the formula.
         """
-        # 
-        # Pad with 0 and 255 at start and end
+        # Add 0 and 255 intensities to use as the lower and upper bound
         thresholds = [0] + [
-            (gray_intensities[i] + gray_intensities[i+1]) / 2
-            for i in range(len(gray_intensities) - 1)
+            (
+                grey_intensities[i] + grey_intensities[i+1]
+            ) / 2
+            for i in range(len(grey_intensities) - 1)
         ] + [255]
 
         return thresholds
@@ -112,18 +112,18 @@ class DART():
             self,
             inp: np.ndarray,
             thresholds: list | tuple,
-            gray_intensities: list | tuple,
+            grey_intensities: list | tuple,
         ) -> np.ndarray:
         """ Creates a simple segmentation according to the thresholds given in thresholds.
 
         Args:
             inp (numpy.ndarray): Input image.
-            threshold (list | tuple): Array of thresholds for each gray level value.
-            gray_intensities (list | tuple):  Array of prior gray levels defined by the user for each threshold.
+            threshold (list | tuple): Array of thresholds for each grey level value.
+            grey_intensities (list | tuple):  Array of prior grey levels defined by the user for each threshold.
         
         Returns:
             Segmented image where each pixel from in the input image is thresholded for
-            each threshold `i` in thresholds, and replaced by `gray_intensities[i]` if it is in
+            each threshold `i` in thresholds, and replaced by `grey_intensities[i]` if it is in
             between the current and next threshold.
         """
         output_img = np.zeros(inp.shape, dtype=np.uint8)
@@ -132,8 +132,8 @@ class DART():
             # At each pixel of the input, get indexes that are both above current threshold and are not above the next threshold
             segmentation = (inp >= threshold) * (inp <= thresholds[i + 1])
             
-            # Fill segmented areas into ouput with gray values for that specific threshold
-            output_img[segmentation] = gray_intensities[i]
+            # Fill segmented areas into ouput with grey values for that specific threshold
+            output_img[segmentation] = grey_intensities[i]
         
         return output_img
 
@@ -156,23 +156,23 @@ class DART():
         """
 
         # Create the SIRT config
-
         config = astra.astra_dict("SIRT_CUDA")
         config["option"] = {}
         
-        # None if this is the first initial reconstruction
+        # If free pixels supplied, so for all the reconstruction that are not initial
         if free_pixels is not None:
             # Create free_pixels dataid
             free_pix_idx = np.where(free_pixels != 0)
-            rec = copy(reconstruction)
+            rec = copy(reconstruction) # Copy reconstruction to avoid data overwriting
             
             # Remove the free pixels from the sinogram
             rec[free_pix_idx] = 0
             
-            # Create sino from free pixels
+            # Create sinogram from fixed pixels
             _, fixed_sinogram = astra.create_sino(rec, self.projector_id)
             
-            # Free pixel sinogram is the difference between fixed and main sinogram
+            # Free pixel sinogram is the difference between fixed sinogram and main sinogram
+            # In this way we can still use the initial sampling of the object as the projection data
             free_pixel_sinogram = self.sinogram - fixed_sinogram
 
             # Create a data2d object for use in the algorithm
@@ -182,13 +182,15 @@ class DART():
             # Put the free pixel sinogram into config
             config["ProjectionDataId"] = free_pixel_sinogram_id
 
-            # Put the free pixels as a reconstructionmask into the algorithm
+            # Put the free pixels as a reconstructionmask into the algorithm to make sure the fixed pixels are not replaced
             free_pixels_id = astra.data2d.create("-vol", self.vol_geom, data=free_pixels)
             config["option"] = {"ReconstructionMaskId": free_pixels_id}
         else:
             # If there is no free_pixel_mask given, we make a blank image from the vol_geom
             reconstruction_id = astra.data2d.create("-vol", self.vol_geom, data=0.0)
             config["ProjectionDataId"] = self.sino_id
+        
+        # Add supersampling to the config if supplied to the class
         if self.supersampling_a:
             config["option"].update({"DetectorSuperSampling": self.supersampling_a})
 
@@ -212,52 +214,51 @@ class DART():
         return reconstruction
     
 
-    def run(self, p: int, gray_intensities: list, iterations: int) -> np.ndarray:
+    def run(self, p: int, grey_intensities: list, iterations: int) -> np.ndarray:
         """Run the DART algorithm according to the initializated values.
         
         Args:
             p (integer): Probability of sampling a pixel as a fixed pixel.
-            gray_intensities (list | tuple): List of prior gray intensity levels.
+            grey_intensities (list | tuple): List of prior grey intensity levels.
             iterations (integer): Number of DART iterations.
         
         Returns:
             Output image after DART reconstruction with set settings.
         """
-        
         self.p = p
-        # Define thresholds for pre-defined gray values
-        thresholds = self.gray_thresholds(gray_intensities)
+        # Define thresholds for pre-defined grey values
+        thresholds = self.grey_thresholds(grey_intensities)
 
         # Initial reconstruction using sirt
         reconstruction = self.reconstruct()
 
-        # Segmentation of current reconstruction
-        segmentation = self.segment(inp=reconstruction, thresholds=thresholds, gray_intensities=gray_intensities)
+        # Initial segmentation
+        segmentation = self.segment(inp=reconstruction, thresholds=thresholds, grey_intensities=grey_intensities)
 
         # Iteration loop
         for i in range(iterations):
-
             # Determine border pixels
             border_pixels = self.border_detect(segmentation)
 
-            # Free pixels whatever the fuck that means
+            # Free pixels sampled + all border pixels
             free_pixels = self.free_pixels() | border_pixels
 
-            # Fixed pixels
+            # Fixed pixels as all non-free pixels
             fixed_pixels = free_pixels == 0
-            # Replace fixed pixels with those from the segmentation; we keep them fixed.
+
+            # Replace fixed pixels in the reconstruction to those from the segmentation; we keep them fixed.
             reconstruction[fixed_pixels] = segmentation[fixed_pixels]
             
-            # SIRT RECONSTRUCTION USING FREE PIXELS as a mask
+            # SIRT reconstruction using free pixels as reconstruction mask
             reconstruction = self.reconstruct(
                 reconstruction=reconstruction,
                 free_pixels=free_pixels,
             )
 
-            # Segmentation of current reconstruction
-            segmentation = self.segment(inp=reconstruction, thresholds=thresholds, gray_intensities=gray_intensities)
+            # Segmentation of current reconstruction.
+            segmentation = self.segment(inp=reconstruction, thresholds=thresholds, grey_intensities=grey_intensities)
 
-            # Smoothing
+            # Smoothing the free pixels if it is not the final reconstruction.
             if i != iterations:
                 smoothed_recon = self.smoothing(reconstruction)
                 reconstruction[free_pixels] = smoothed_recon[free_pixels]

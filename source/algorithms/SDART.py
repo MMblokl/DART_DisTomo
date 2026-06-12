@@ -1,11 +1,7 @@
 import astra
 import numpy as np
-from PIL import Image
-from scipy.ndimage import gaussian_filter
 from scipy.sparse.linalg import lsqr, LinearOperator
-from copy import copy
-from source.utils import rescale, saveimg, create_sinogram
-from source.metrics import calc_rnmp, calc_ssim
+from source.utils import rescale
 
 class SDART():
     def __init__(
@@ -49,7 +45,11 @@ class SDART():
         pad = np.pad(inp, 1, mode="edge")
 
         # This is basically just a semi-vectorized method of checking each pixel.
-        # This checks counts all non-equal border pixels and generates a matrix for each position.
+
+        # This is the SAME function as the one in DART, but instead of it being booleans, it converts the booleans of
+        # each of the neighbour checks to integers and then sums the resulting checked matrices into a single matrix.
+        # The resulting matrix has neighbour counts at the same positition as the ones in "inp".
+
         count = (
             (inp != pad[:-2, :-2]).astype(np.uint8) +   # Top left
             (inp != pad[:-2, 1:-1]).astype(np.uint8) + # Top
@@ -60,6 +60,7 @@ class SDART():
             (inp != pad[2:, 1:-1]).astype(np.uint8) +  # Bottom
             (inp != pad[2:, 2:]).astype(np.uint8)      # Bottom right
         )
+
         return count
 
 
@@ -67,14 +68,14 @@ class SDART():
         """Reconstruction using B, W and v with a least squares problem solver.
         
         Args:
-            B (np.ndarray): Matrix of neighbour values from calc_b.
-            W: W matrix from astra.opTomo() calculated from the projector space.
+            B (np.ndarray): Matrix of neighbour values from calc_B.
+            W: W projection simulation matrix astra.OpTomo() class using a parrallel projector.
             v (np.ndarray): Segmented image to be used in calculating output
         
         Returns:
             reconstructed image based on inputs.
         """
-        # Calculation of the `D` matrix, kept as a single array to reduce memory impact.
+        # Calculation of the 'D' matrix, kept as a single array to reduce memory impact over having it as a sparse matrix.
         d = 100 / (3 ** B.ravel())
         m, n = W.shape
 
@@ -105,7 +106,7 @@ class SDART():
             dtype=np.float32,
         )
 
-        # B component
+        # B component named "right" as B is already taken by the neighbour count matrix.
         right = np.concatenate(
             [
                 self.sinogram.flatten(),
@@ -113,35 +114,37 @@ class SDART():
             ]
         )
 
-        # Use lsqr with the same number of iterations as SIRT for DART.
+        # Use lsqr with a fixed number of iterations, the solution of the lsqr is our reconstructed image.
         reconstruction = lsqr(A, right, iter_lim=self.reconstruction_iterations)[0]
+        # Solution is a vector, reshape to np.ndarray of correct shape.
         reconstruction = reconstruction.reshape(self.img_shape)
         
-        # Rescale to 255
+        # Rescale to 255 using np.clip
         reconstruction = rescale(reconstruction)
 
         return reconstruction
 
 
-    def gray_thresholds(
+    def grey_thresholds(
             self,
-            gray_intensities: list | tuple,
+            grey_intensities: list | tuple,
         ) -> list:
-        """Calculated gray-level intensity thresholds for segmentation based on the formula:
+        """Calculated grey-level intensity thresholds for segmentation based on the formula:
         `Tau_i = ( rho_i + rho_i+1 ) / 2`
-        Where `Tau` is the threshold for `gray-value` `rho_i` on position `i` in the array.
+        Where `Tau` is the threshold for `grey-value` `rho_i` on position `i` in the array.
         
         Args:
-            gray_intensities (list | tuple): List of known gray levels in the image from low to high.
+            grey_intensities (list | tuple): List of known grey levels in the image from low to high.
         
         Returns:
-            List of gray value thresholds according to the formula.
+            List of grey value thresholds according to the formula.
         """
-        # 
-        # Pad with 0 and 255 at start and end
+        # Add 0 and 255 intensities to use as the lower and upper bound
         thresholds = [0] + [
-            (gray_intensities[i] + gray_intensities[i+1]) / 2
-            for i in range(len(gray_intensities) - 1)
+            (
+                grey_intensities[i] + grey_intensities[i+1]
+            ) / 2
+            for i in range(len(grey_intensities) - 1)
         ] + [255]
 
         return thresholds
@@ -151,18 +154,18 @@ class SDART():
             self,
             inp: np.ndarray,
             thresholds: list | tuple,
-            gray_intensities: list | tuple,
+            grey_intensities: list | tuple,
         ) -> np.ndarray:
         """ Creates a simple segmentation according to the thresholds given in thresholds.
 
         Args:
             inp (numpy.ndarray): Input image.
-            threshold (list | tuple): Array of thresholds for each gray level value.
-            gray_intensities (list | tuple):  Array of prior gray levels defined by the user for each threshold.
+            threshold (list | tuple): Array of thresholds for each grey level value.
+            grey_intensities (list | tuple):  Array of prior grey levels defined by the user for each threshold.
         
         Returns:
             Segmented image where each pixel from in the input image is thresholded for
-            each threshold `i` in thresholds, and replaced by `gray_intensities[i]` if it is in
+            each threshold `i` in thresholds, and replaced by `grey_intensities[i]` if it is in
             between the current and next threshold.
         """
         output_img = np.zeros(inp.shape, dtype=np.uint8)
@@ -171,8 +174,8 @@ class SDART():
             # At each pixel of the input, get indexes that are both above current threshold and are not above the next threshold
             segmentation = (inp >= threshold) * (inp <= thresholds[i + 1])
             
-            # Fill segmented areas into ouput with gray values for that specific threshold
-            output_img[segmentation] = gray_intensities[i]
+            # Fill segmented areas into ouput with grey values for that specific threshold
+            output_img[segmentation] = grey_intensities[i]
         
         return output_img
 
@@ -214,74 +217,44 @@ class SDART():
         return reconstruction
     
 
-    def run(self, gray_intensities: list, iterations: int) -> np.ndarray:
+    def run(self, grey_intensities: list, iterations: int) -> np.ndarray:
         """Runs the SDART algorithm according to the initializated values.
         
         Args:
-            gray_intensities (list | tuple): List of prior gray intensity levels.
+            grey_intensities (list | tuple): List of prior grey intensity levels.
             iterations (integer): Number of SDART iterations.
         
         Returns:
             Output image after SDART reconstruction with set settings.
         """
-        
-        # Define thresholds for pre-defined gray values
-        thresholds = self.gray_thresholds(gray_intensities)
+        # Define thresholds for pre-defined grey values
+        thresholds = self.grey_thresholds(grey_intensities)
 
         # Initial reconstruction using sirt
         reconstruction = self.reconstruct()
 
         # Initial segmentation
-        segmentation = self.segment(inp=reconstruction, thresholds=thresholds, gray_intensities=gray_intensities)
+        segmentation = self.segment(inp=reconstruction, thresholds=thresholds, grey_intensities=grey_intensities)
 
         # Iteration loop
         for _ in range(iterations):
             # Segmentation of current reconstruction
             v = segmentation
 
-            # Determine Penalty for each pixel
+            # Determine number of neighbours for each pixel
             B = self.calculate_B(segmentation)
 
             # Calculate the W matrix
             W = astra.optomo.OpTomo(self.projector_id)
 
+            # Compute the reconstruction using LSQR, D matrix is computed here
             reconstruction = self.lsqr_recon(B, W, v)
 
-            # Segment again
-            segmentation = self.segment(inp=reconstruction, thresholds=thresholds, gray_intensities=gray_intensities)
+            # Segment the result
+            segmentation = self.segment(inp=reconstruction, thresholds=thresholds, grey_intensities=grey_intensities)
 
         # Cleanup
         astra.data2d.delete(self.sino_id)
         astra.projector.delete(self.projector_id)
 
         return segmentation
-
-
-if __name__ == "__main__":
-    img = Image.open("./phantoms/meshes/mesh_0.png")
-    img = np.asarray(img)
-    
-    proj_geom, sino = create_sinogram(img, 64, 180)
-
-    sdart1 = SDART(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, reconstruction_iterations=10, lambda_hp=0.24, supersampling_a=1)
-    sdart4 = SDART(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, reconstruction_iterations=10, lambda_hp=0.24, supersampling_a=4)
-    sdart8 = SDART(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, reconstruction_iterations=10, lambda_hp=0.24, supersampling_a=8)
-    sdart16 = SDART(proj_geom=proj_geom, sinogram=sino, img_shape=img.shape, reconstruction_iterations=10, lambda_hp=0.24, supersampling_a=16)
-
-    reconstructed_image_1 = sdart1.run([0, 255], 100)
-    reconstructed_image_4 = sdart4.run([0, 255], 100)
-    reconstructed_image_8 = sdart8.run([0, 255], 100)
-    reconstructed_image_16 = sdart16.run([0, 255], 100)
-
-    saveimg(reconstructed_image_1, "./sdart1.png")
-    saveimg(reconstructed_image_4, "./sdart4.png")
-    saveimg(reconstructed_image_8, "./sdart8.png")
-    saveimg(reconstructed_image_16, "./sdart16.png")
-
-    print("RNMP, SSIM")
-    print(calc_rnmp(img, reconstructed_image_1), calc_ssim(img, reconstructed_image_1))
-    print(calc_rnmp(img, reconstructed_image_4), calc_ssim(img, reconstructed_image_4))
-    print(calc_rnmp(img, reconstructed_image_8), calc_ssim(img, reconstructed_image_8))
-    print(calc_rnmp(img, reconstructed_image_16), calc_ssim(img, reconstructed_image_16))
-
-
